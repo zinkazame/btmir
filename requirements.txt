@@ -1,0 +1,9 @@
+@"
+fastapi>=0.110
+uvicorn>=0.28
+websockets>=12.0
+aiohttp>=3.9
+click>=8.1
+httpx>=0.27
+pytest>=9.0
+"@ | Out-File -FilePath requirements.txt -Encoding utf8
