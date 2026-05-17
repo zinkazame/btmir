@@ -3,122 +3,277 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BTMIR — BGP Trust Dashboard</title>
+  <title>BTMIR — BGP Trust Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <style>
-    /* ── Reset & Base ────────────────────────── */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
-      min-height: 100vh;
+    :root {
+      --bg:       #080c10;
+      --surface:  #0d1520;
+      --panel:    #111d2e;
+      --border:   #1e3a5f;
+      --border2:  #0f2a45;
+      --green:    #00e5a0;
+      --green2:   #00b87a;
+      --amber:    #f5a623;
+      --orange:   #ff6b35;
+      --red:      #ff3b3b;
+      --blue:     #4da6ff;
+      --purple:   #a78bfa;
+      --text:     #c8dff5;
+      --text2:    #5c8ab0;
+      --text3:    #2d5a80;
+      --mono:     'JetBrains Mono', monospace;
+      --display:  'Syne', sans-serif;
     }
 
-    /* ── Header ──────────────────────────────── */
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Scanline overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* ── Header ── */
     header {
-      background: #161b22;
-      border-bottom: 1px solid #30363d;
-      padding: 14px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
+      position: relative;
     }
 
-    header h1 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #58a6ff;
-      letter-spacing: 0.5px;
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0.4;
     }
 
-    header h1 span {
-      color: #f0883e;
+    .logo {
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .live-badge {
+    .logo-accent { color: var(--green); }
+
+    .logo-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text3);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 10px;
+      color: var(--text2);
+    }
+
+    .live-indicator {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
-      color: #3fb950;
+      color: var(--green);
+      font-weight: 600;
+      letter-spacing: 1px;
     }
 
     .live-dot {
-      width: 8px;
-      height: 8px;
-      background: #3fb950;
+      width: 7px; height: 7px;
+      background: var(--green);
       border-radius: 50%;
-      animation: pulse 1.5s infinite;
+      box-shadow: 0 0 8px var(--green);
+      animation: livepulse 2s infinite;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
+    @keyframes livepulse {
+      0%,100% { opacity:1; box-shadow: 0 0 8px var(--green); }
+      50%      { opacity:0.4; box-shadow: 0 0 2px var(--green); }
     }
 
-    /* ── Stats Bar ───────────────────────────── */
+    .header-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .header-stat-val { color: var(--text); font-size: 11px; font-weight: 600; }
+    .header-stat-lbl { color: var(--text3); font-size: 9px; letter-spacing: 0.5px; }
+
+    /* ── Stats Bar ── */
     .stats-bar {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--border2);
       gap: 1px;
-      background: #30363d;
-      border-bottom: 1px solid #30363d;
+      flex-shrink: 0;
     }
 
     .stat-card {
-      background: #161b22;
-      padding: 14px 20px;
+      background: var(--surface);
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: help;
+      position: relative;
+      transition: background 0.15s;
+    }
+
+    .stat-card:hover { background: var(--panel); }
+
+    .stat-card:hover .stat-tooltip {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .stat-tooltip {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 10px;
+      color: var(--text2);
+      white-space: nowrap;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      line-height: 1.6;
       text-align: center;
     }
 
-    .stat-value {
-      font-size: 24px;
+    .stat-val {
+      font-size: 20px;
       font-weight: 700;
-      color: #58a6ff;
+      color: var(--blue);
       line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
 
-    .stat-value.danger  { color: #f85149; }
-    .stat-value.success { color: #3fb950; }
-    .stat-value.warning { color: #f0883e; }
+    .stat-val.danger  { color: var(--red); }
+    .stat-val.success { color: var(--green); }
+    .stat-val.warn    { color: var(--amber); }
+    .stat-val.purple  { color: var(--purple); }
 
-    .stat-label {
-      font-size: 11px;
-      color: #8b949e;
-      margin-top: 4px;
+    .stat-lbl {
+      font-size: 9px;
+      color: var(--text3);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
     }
 
-    /* ── Main Layout ─────────────────────────── */
+    /* ── Main Layout ── */
     .main {
       display: grid;
-      grid-template-columns: 1fr 340px;
-      grid-template-rows: 460px 1fr;
+      grid-template-columns: 1fr 320px;
+      grid-template-rows: 1fr 220px;
       gap: 1px;
-      background: #30363d;
-      height: calc(100vh - 110px);
+      background: var(--border2);
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
     }
 
-    /* ── Network Graph ───────────────────────── */
+    /* ── Graph Panel ── */
     .graph-panel {
-      background: #0d1117;
+      background: var(--bg);
       position: relative;
       overflow: hidden;
+      grid-row: 1;
+    }
+
+    .graph-header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(8,12,16,0.95) 0%, transparent 100%);
     }
 
     .panel-title {
-      position: absolute;
-      top: 12px;
-      left: 16px;
-      font-size: 12px;
+      font-size: 9px;
       font-weight: 600;
-      color: #8b949e;
+      color: var(--text3);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      z-index: 10;
+      letter-spacing: 1.5px;
+    }
+
+    /* ── Graph Legend ── */
+    .graph-legend {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      color: var(--text2);
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-size {
+      font-size: 8px;
+      color: var(--text3);
+      margin-left: 8px;
+      border-left: 1px solid var(--border);
+      padding-left: 8px;
     }
 
     #network-svg {
@@ -126,245 +281,357 @@
       height: 100%;
     }
 
-    /* ── Right Column ────────────────────────── */
+    /* ── Trust Model Info Box ── */
+    .model-box {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      background: rgba(13,21,32,0.92);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 9px;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+
+    .model-box-title {
+      color: var(--green);
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .model-formula {
+      color: var(--text);
+      font-size: 11px;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .model-row {
+      display: flex;
+      gap: 6px;
+      color: var(--text2);
+      margin-bottom: 2px;
+      line-height: 1.5;
+    }
+
+    .model-key { color: var(--amber); font-weight: 600; width: 14px; }
+
+    /* ── Right Column ── */
     .right-col {
       display: flex;
       flex-direction: column;
       gap: 1px;
-      background: #30363d;
+      background: var(--border2);
+      grid-row: 1;
     }
 
-    /* ── Alert Feed ──────────────────────────── */
-    .alert-panel {
-      background: #161b22;
-      flex: 1;
-      overflow: hidden;
+    /* ── Activity Feed ── */
+    .activity-panel {
+      background: var(--surface);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+      flex: 1;
     }
 
-    .alert-header {
-      padding: 12px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #8b949e;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border-bottom: 1px solid #30363d;
+    .panel-head {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border2);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
     }
 
-    .alert-count {
-      background: #f85149;
-      color: white;
-      border-radius: 10px;
+    .panel-head-title {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .badge {
+      font-size: 9px;
+      font-weight: 700;
       padding: 1px 7px;
-      font-size: 11px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
     }
 
-    .alert-list {
+    .badge-red    { background: rgba(255,59,59,0.15); color: var(--red);    border: 1px solid rgba(255,59,59,0.3); }
+    .badge-green  { background: rgba(0,229,160,0.1);  color: var(--green);  border: 1px solid rgba(0,229,160,0.2); }
+    .badge-amber  { background: rgba(245,166,35,0.1); color: var(--amber);  border: 1px solid rgba(245,166,35,0.2); }
+
+    .activity-list {
       overflow-y: auto;
       flex: 1;
-      padding: 8px;
+      padding: 6px;
     }
 
-    .alert-item {
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-left: 3px solid #f85149;
-      border-radius: 4px;
-      padding: 8px 10px;
-      margin-bottom: 6px;
-      font-size: 11px;
-      animation: slideIn 0.3s ease;
-    }
-
-    .alert-item.HIGH     { border-left-color: #f0883e; }
-    .alert-item.MEDIUM   { border-left-color: #e3b341; }
-    .alert-item.CRITICAL { border-left-color: #f85149; }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(10px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    .alert-type {
-      font-weight: 600;
-      color: #f85149;
+    .activity-item {
+      display: flex;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 3px;
       margin-bottom: 3px;
-    }
-
-    .alert-detail {
-      color: #8b949e;
+      font-size: 10px;
       line-height: 1.5;
+      border-left: 2px solid transparent;
+      transition: background 0.1s;
+      animation: fadeIn 0.3s ease;
     }
 
-    .no-alerts {
+    @keyframes fadeIn {
+      from { opacity:0; transform: translateX(4px); }
+      to   { opacity:1; transform: translateX(0); }
+    }
+
+    .activity-item:hover { background: var(--panel); }
+    .activity-item.allow  { border-left-color: var(--green2); }
+    .activity-item.block  { border-left-color: var(--red);    background: rgba(255,59,59,0.04); }
+    .activity-item.hijack { border-left-color: var(--amber);  background: rgba(245,166,35,0.05); }
+
+    .act-icon { font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+    .act-body { flex: 1; min-width: 0; }
+    .act-main { color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .act-sub  { color: var(--text3); font-size: 9px; margin-top: 1px; }
+    .act-time { font-size: 9px; color: var(--text3); flex-shrink: 0; }
+
+    .no-activity {
       text-align: center;
-      color: #3fb950;
-      font-size: 12px;
-      padding: 20px;
+      color: var(--text3);
+      font-size: 11px;
+      padding: 30px 20px;
+      line-height: 2;
     }
 
-    /* ── Trust Table ─────────────────────────── */
+    /* ── Bottom Table ── */
     .table-panel {
-      background: #161b22;
+      background: var(--surface);
       grid-column: 1 / -1;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    .table-header {
-      padding: 12px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #8b949e;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border-bottom: 1px solid #30363d;
+    .table-head {
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border2);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
     }
 
-    .table-scroll {
-      overflow-y: auto;
-      flex: 1;
-    }
+    .table-scroll { overflow-y: auto; flex: 1; }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 11px;
     }
 
     thead th {
-      background: #161b22;
-      padding: 8px 16px;
+      background: var(--surface);
+      padding: 6px 14px;
       text-align: left;
-      color: #8b949e;
+      color: var(--text3);
+      font-size: 9px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-size: 11px;
+      letter-spacing: 0.8px;
       position: sticky;
       top: 0;
-      border-bottom: 1px solid #30363d;
+      border-bottom: 1px solid var(--border2);
+      white-space: nowrap;
+    }
+
+    thead th .th-hint {
+      font-size: 8px;
+      color: var(--text3);
+      opacity: 0.6;
+      font-weight: 400;
+      margin-left: 3px;
     }
 
     tbody tr {
-      border-bottom: 1px solid #21262d;
-      transition: background 0.15s;
+      border-bottom: 1px solid rgba(30,58,95,0.3);
+      transition: background 0.1s;
     }
 
-    tbody tr:hover { background: #161b22; }
+    tbody tr:hover { background: var(--panel); }
+    tbody tr.isolated { background: rgba(255,59,59,0.04); }
 
     tbody td {
-      padding: 8px 16px;
-      color: #e6edf3;
+      padding: 7px 14px;
+      color: var(--text);
+      white-space: nowrap;
     }
 
     .asn-cell {
-      font-family: monospace;
-      color: #58a6ff;
+      font-family: var(--mono);
+      color: var(--blue);
       font-weight: 600;
+      font-size: 12px;
     }
 
-    .score-bar-wrap {
+    /* Score bar */
+    .score-wrap {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     .score-bar {
-      height: 6px;
-      border-radius: 3px;
-      background: #21262d;
-      flex: 1;
+      height: 4px;
+      width: 100px;
+      background: rgba(30,58,95,0.5);
+      border-radius: 2px;
       overflow: hidden;
     }
 
     .score-fill {
       height: 100%;
-      border-radius: 3px;
+      border-radius: 2px;
       transition: width 0.5s ease;
     }
 
     .score-num {
-      font-family: monospace;
+      font-family: var(--mono);
       font-size: 11px;
-      color: #8b949e;
-      width: 36px;
+      color: var(--text2);
+      width: 42px;
       text-align: right;
+      font-variant-numeric: tabular-nums;
     }
 
+    /* Component bars */
+    .comp-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .comp-bar {
+      height: 12px;
+      width: 40px;
+      background: rgba(30,58,95,0.3);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .comp-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .comp-val {
+      font-size: 10px;
+      color: var(--text2);
+      width: 30px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Verdict badge */
     .verdict {
       padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 10px;
+      border-radius: 2px;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
-    .verdict.TRUSTED  {
-      background: rgba(63, 185, 80, 0.15);
-      color: #3fb950;
-      border: 1px solid rgba(63, 185, 80, 0.3);
+    .verdict.TRUSTED  { background: rgba(0,229,160,0.1); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
+    .verdict.ISOLATED { background: rgba(255,59,59,0.1);  color: var(--red);   border: 1px solid rgba(255,59,59,0.25); }
+
+    .updates-cell {
+      color: var(--text2);
+      font-size: 10px;
     }
 
-    .verdict.ISOLATED {
-      background: rgba(248, 81, 73, 0.15);
-      color: #f85149;
-      border: 1px solid rgba(248, 81, 73, 0.3);
-    }
-
-    .wb-val { color: #f0883e; font-family: monospace; }
-    .wd-val { color: #58a6ff; font-family: monospace; }
-    .wr-val { color: #bc8cff; font-family: monospace; }
-
-    /* ── Scrollbar ───────────────────────────── */
-    ::-webkit-scrollbar       { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
-
-    /* ── Empty State ─────────────────────────── */
-    .empty {
-      text-align: center;
-      color: #8b949e;
-      padding: 40px;
-      font-size: 13px;
-    }
-
-    /* ── Tooltip ─────────────────────────────── */
-    .tooltip {
+    /* ── Tooltip ── */
+    .node-tooltip {
       position: fixed;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 10px;
       pointer-events: none;
-      z-index: 100;
+      z-index: 500;
       display: none;
-      line-height: 1.6;
+      line-height: 1.8;
+      min-width: 180px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
 
-    .refresh-info {
-      font-size: 11px;
-      color: #8b949e;
+    .tooltip-asn {
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
     }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .tooltip-label { color: var(--text3); }
+    .tooltip-value { color: var(--text); font-weight: 600; }
+
+    /* ── Scrollbars ── */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Empty ── */
+    .empty-state {
+      text-align: center;
+      color: var(--text3);
+      padding: 30px;
+      font-size: 10px;
+      line-height: 2.5;
+    }
+
+    .empty-icon { font-size: 24px; display: block; margin-bottom: 8px; opacity: 0.4; }
   </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
-  <h1>BTMIR — <span>BGP Trust</span> Dashboard</h1>
-  <div style="display:flex; align-items:center; gap:20px;">
-    <span class="refresh-info" id="last-update">Connecting...</span>
-    <div class="live-badge">
+  <div class="logo">
+    <span>BTMIR</span>
+    <span class="logo-accent">//</span>
+    <span style="font-weight:400; font-size:12px; color:var(--text2)">BGP Trust Monitor</span>
+    <span class="logo-tag">LIVE</span>
+  </div>
+  <div class="header-right">
+    <div class="header-stat">
+      <span class="header-stat-val" id="h-uptime">—</span>
+      <span class="header-stat-lbl">Uptime</span>
+    </div>
+    <div class="header-stat">
+      <span class="header-stat-val" id="h-updates">—</span>
+      <span class="header-stat-lbl">BGP Updates</span>
+    </div>
+    <div class="header-stat">
+      <span class="header-stat-val" id="h-lastupdate">Connecting…</span>
+      <span class="header-stat-lbl">Last Refresh</span>
+    </div>
+    <div class="live-indicator">
       <div class="live-dot"></div>
       LIVE
     </div>
@@ -373,69 +640,127 @@
 
 <!-- Stats Bar -->
 <div class="stats-bar">
+
   <div class="stat-card">
-    <div class="stat-value" id="s-asns">—</div>
-    <div class="stat-label">Total ASes</div>
+    <span class="stat-val" id="s-asns">—</span>
+    <span class="stat-lbl">Tracked ASes</span>
+    <div class="stat-tooltip">Autonomous Systems seen<br>in the BGP stream so far</div>
   </div>
+
   <div class="stat-card">
-    <div class="stat-value danger" id="s-isolated">—</div>
-    <div class="stat-label">Isolated</div>
+    <span class="stat-val danger" id="s-isolated">—</span>
+    <span class="stat-lbl">Isolated</span>
+    <div class="stat-tooltip">ASes with trust score ≤ 0.40<br>Routes from these are withdrawn</div>
   </div>
+
   <div class="stat-card">
-    <div class="stat-value" id="s-prefixes">—</div>
-    <div class="stat-label">Prefixes</div>
+    <span class="stat-val" id="s-trusted">—</span>
+    <span class="stat-lbl">Trusted</span>
+    <div class="stat-tooltip">ASes with trust score > 0.40<br>Routes from these are announced</div>
   </div>
+
   <div class="stat-card">
-    <div class="stat-value" id="s-chain">—</div>
-    <div class="stat-label">Chain Blocks</div>
+    <span class="stat-val" id="s-prefixes">—</span>
+    <span class="stat-lbl">IP Prefixes</span>
+    <div class="stat-tooltip">Distinct IP blocks tracked<br>Used for hijack detection</div>
   </div>
+
   <div class="stat-card">
-    <div class="stat-value success" id="s-chain-valid">—</div>
-    <div class="stat-label">Chain Integrity</div>
+    <span class="stat-val purple" id="s-chain">—</span>
+    <span class="stat-lbl">Audit Blocks</span>
+    <div class="stat-tooltip">SHA-256 hash-chained records<br>Every trust change is permanent</div>
   </div>
+
   <div class="stat-card">
-    <div class="stat-value warning" id="s-alerts">—</div>
-    <div class="stat-label">Hijack Alerts</div>
+    <span class="stat-val success" id="s-chain-valid">—</span>
+    <span class="stat-lbl">Chain Integrity</span>
+    <div class="stat-tooltip">Verifies audit chain has not<br>been tampered with</div>
   </div>
+
+  <div class="stat-card">
+    <span class="stat-val warn" id="s-alerts">—</span>
+    <span class="stat-lbl">Hijack Alerts</span>
+    <div class="stat-tooltip">Suspected prefix hijacks detected<br>via origin change or sub-prefix attack</div>
+  </div>
+
 </div>
 
-<!-- Main Layout -->
+<!-- Main -->
 <div class="main">
 
   <!-- Network Graph -->
   <div class="graph-panel">
-    <div class="panel-title">AS Trust Network</div>
-    <svg id="network-svg"></svg>
-  </div>
-
-  <!-- Right Column -->
-  <div class="right-col">
-    <div class="alert-panel">
-      <div class="alert-header">
-        Hijack Alerts
-        <span class="alert-count" id="alert-count">0</span>
+    <div class="graph-header">
+      <span class="panel-title">AS Trust Network</span>
+      <div class="graph-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#00e5a0"></div>
+          High trust (T > 0.70)
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#f5a623"></div>
+          Medium (0.40 – 0.70)
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ff6b35"></div>
+          Low (near threshold)
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ff3b3b; box-shadow:0 0 6px #ff3b3b"></div>
+          Isolated (T ≤ 0.40)
+        </div>
+        <div class="legend-item legend-size">
+          Node size = trust score
+        </div>
       </div>
-      <div class="alert-list" id="alert-list">
-        <div class="no-alerts">✓ No hijacks detected</div>
+    </div>
+    <svg id="network-svg"></svg>
+
+    <!-- Trust model explanation -->
+    <div class="model-box">
+      <div class="model-box-title">Trust Formula</div>
+      <div class="model-formula">T = α·WB + β·WD + γ·WR</div>
+      <div class="model-row"><span class="model-key">WB</span><span>Security posture (RPKI + path anomaly) · α=0.30</span></div>
+      <div class="model-row"><span class="model-key">WD</span><span>Direct interaction history (time-decayed) · β=0.40</span></div>
+      <div class="model-row"><span class="model-key">WR</span><span>Peer recommendations (collusion-resistant) · γ=0.30</span></div>
+      <div class="model-row" style="margin-top:4px; color:var(--red)">
+        <span class="model-key">✗</span><span>T ≤ 0.40 → Isolated · Routes withdrawn</span>
       </div>
     </div>
   </div>
 
-  <!-- Trust Table — full width bottom -->
+  <!-- Right: Activity Feed -->
+  <div class="right-col">
+    <div class="activity-panel">
+      <div class="panel-head">
+        <span class="panel-head-title">Live Activity</span>
+        <span class="badge badge-green" id="activity-count">0 events</span>
+      </div>
+      <div class="activity-list" id="activity-list">
+        <div class="no-activity">
+          <span class="empty-icon">📡</span>
+          Waiting for BGP updates…<br>
+          <span style="font-size:9px">Connect to RIPE RIS Live to see live routing events</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom: Trust Table -->
   <div class="table-panel">
-    <div class="table-header">
-      AS Trust Scores
-      <span class="refresh-info">Auto-refresh every 5s</span>
+    <div class="table-head">
+      <span class="panel-head-title">AS Trust Scores</span>
+      <span style="font-size:9px; color:var(--text3)">Auto-refresh every 5s · Sorted by trust score</span>
     </div>
     <div class="table-scroll">
       <table>
         <thead>
           <tr>
             <th>ASN</th>
-            <th>Trust Score</th>
-            <th>WB</th>
-            <th>WD</th>
-            <th>WR</th>
+            <th>Trust Score <span class="th-hint">T = α·WB + β·WD + γ·WR</span></th>
+            <th>WB <span class="th-hint">Security</span></th>
+            <th>WD <span class="th-hint">Direct History</span></th>
+            <th>WR <span class="th-hint">Peer Opinion</span></th>
             <th>Verdict</th>
             <th>Reason</th>
           </tr>
@@ -447,29 +772,42 @@
 
 </div>
 
-<div class="tooltip" id="tooltip"></div>
+<div class="node-tooltip" id="node-tooltip"></div>
 
 <script>
 const API = 'http://localhost:8000';
-let trustData   = [];
-let alertData   = [];
-let simulation  = null;
+let trustData  = [];
+let activityLog = [];   // rolling activity log
+let simulation = null;
+let svg, g, linkSel, nodeSel, labelSel;
+let nodes = [], links = [];
+let startTime = Date.now();
 
 // ── Colour helpers ────────────────────────────────────────
 function scoreColor(score, isolated) {
-  if (isolated) return '#f85149';
-  if (score > 0.7) return '#3fb950';
-  if (score > 0.5) return '#e3b341';
-  return '#f0883e';
+  if (isolated) return '#ff3b3b';
+  if (score > 0.70) return '#00e5a0';
+  if (score > 0.55) return '#f5a623';
+  if (score > 0.40) return '#ff6b35';
+  return '#ff3b3b';
 }
 
-function barColor(score) {
-  if (score > 0.7) return '#3fb950';
-  if (score > 0.5) return '#e3b341';
-  return '#f85149';
+function compColor(val, type) {
+  const colors = { wb: '#a78bfa', wd: '#4da6ff', wr: '#00e5a0' };
+  return colors[type] || '#4da6ff';
 }
 
-// ── Fetch all data ────────────────────────────────────────
+// ── Uptime ────────────────────────────────────────────────
+function formatUptime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}h ${m%60}m`;
+  if (m > 0) return `${m}m ${s%60}s`;
+  return `${s}s`;
+}
+
+// ── Fetch ─────────────────────────────────────────────────
 async function fetchAll() {
   try {
     const [trust, alerts, stats] = await Promise.all([
@@ -477,161 +815,239 @@ async function fetchAll() {
       fetch(`${API}/alerts`).then(r => r.json()),
       fetch(`${API}/stats`).then(r => r.json()),
     ]);
-    trustData  = trust;
-    alertData  = alerts;
+
+    // Detect changes for activity log
+    detectChanges(trust, alerts);
+
+    trustData = trust;
     updateStats(stats);
     updateTable(trust);
-    updateAlerts(alerts);
     updateGraph(trust);
-    document.getElementById('last-update').textContent =
-      'Last update: ' + new Date().toLocaleTimeString();
+
+    document.getElementById('h-uptime').textContent =
+      formatUptime(Date.now() - startTime);
+    document.getElementById('h-updates').textContent =
+      stats.known_prefixes.toLocaleString();
+    document.getElementById('h-lastupdate').textContent =
+      new Date().toLocaleTimeString();
+
   } catch(e) {
-    document.getElementById('last-update').textContent =
-      'API unreachable — is BTMIR running?';
+    document.getElementById('h-lastupdate').textContent = 'API offline';
   }
 }
 
-// ── Stats Bar ─────────────────────────────────────────────
-function updateStats(s) {
-  document.getElementById('s-asns').textContent =
-    s.total_asns;
-  document.getElementById('s-isolated').textContent =
-    s.isolated_asns;
-  document.getElementById('s-prefixes').textContent =
-    s.known_prefixes.toLocaleString();
-  document.getElementById('s-chain').textContent =
-    s.chain_length.toLocaleString();
-  const cv = document.getElementById('s-chain-valid');
-  cv.textContent  = s.chain_valid ? 'VALID' : 'TAMPERED';
-  cv.className    = 'stat-value ' +
-    (s.chain_valid ? 'success' : 'danger');
-  document.getElementById('s-alerts').textContent =
-    s.alert_count;
-  document.getElementById('alert-count').textContent =
-    s.alert_count;
+// ── Activity log ──────────────────────────────────────────
+let prevTrust = {};
+let prevAlerts = 0;
+
+function detectChanges(trust, alerts) {
+  // New ASes or score changes
+  trust.forEach(d => {
+    const prev = prevTrust[d.asn];
+    if (!prev) {
+      addActivity('new', d);
+    } else if (prev.is_isolated !== d.is_isolated) {
+      addActivity(d.is_isolated ? 'isolated' : 'recovered', d);
+    }
+    prevTrust[d.asn] = d;
+  });
+
+  // New hijack alerts
+  if (alerts.length > prevAlerts) {
+    const newAlerts = alerts.slice(prevAlerts);
+    newAlerts.forEach(a => addActivity('hijack', null, a));
+    prevAlerts = alerts.length;
+  }
 }
 
-// ── Trust Table ───────────────────────────────────────────
-function updateTable(data) {
-  const tbody = document.getElementById('trust-table');
-  if (!data.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="7" class="empty">' +
-      'No AS data yet — waiting for BGP updates...</td></tr>';
+function addActivity(type, asData, alertData) {
+  const now = new Date().toLocaleTimeString();
+  let item;
+
+  if (type === 'new') {
+    item = {
+      cls:  'allow',
+      icon: '🌐',
+      main: `AS${asData.asn} first seen`,
+      sub:  `T=${asData.final.toFixed(3)} · ${asData.verdict}`,
+      time: now,
+    };
+  } else if (type === 'isolated') {
+    item = {
+      cls:  'block',
+      icon: '🚫',
+      main: `AS${asData.asn} ISOLATED`,
+      sub:  `Trust fell to ${asData.final.toFixed(3)} · routes withdrawn`,
+      time: now,
+    };
+  } else if (type === 'recovered') {
+    item = {
+      cls:  'allow',
+      icon: '✅',
+      main: `AS${asData.asn} recovered`,
+      sub:  `Trust rose to ${asData.final.toFixed(3)}`,
+      time: now,
+    };
+  } else if (type === 'hijack') {
+    item = {
+      cls:  'hijack',
+      icon: '⚠️',
+      main: `HIJACK: ${alertData.prefix}`,
+      sub:  `Legit: AS${alertData.legit_origin} → Rogue: AS${alertData.seen_origin} · ${(alertData.confidence*100).toFixed(0)}% conf`,
+      time: now,
+    };
+  }
+
+  if (item) {
+    activityLog.unshift(item);
+    if (activityLog.length > 50) activityLog.pop();
+    renderActivity();
+  }
+}
+
+function renderActivity() {
+  const list = document.getElementById('activity-list');
+  const count = document.getElementById('activity-count');
+
+  count.textContent = `${activityLog.length} events`;
+
+  if (!activityLog.length) {
+    list.innerHTML = `<div class="no-activity">
+      <span class="empty-icon">📡</span>
+      Waiting for BGP updates…<br>
+      <span style="font-size:9px">Events appear as routing changes occur</span>
+    </div>`;
     return;
   }
-  tbody.innerHTML = data.map(d => `
-    <tr>
-      <td class="asn-cell">AS${d.asn}</td>
-      <td>
-        <div class="score-bar-wrap">
-          <div class="score-bar">
-            <div class="score-fill" style="
-              width:${(d.final*100).toFixed(1)}%;
-              background:${barColor(d.final)}">
-            </div>
-          </div>
-          <span class="score-num">${d.final.toFixed(3)}</span>
-        </div>
-      </td>
-      <td class="wb-val">${d.wb.toFixed(2)}</td>
-      <td class="wd-val">${d.wd.toFixed(2)}</td>
-      <td class="wr-val">${d.wr.toFixed(2)}</td>
-      <td>
-        <span class="verdict ${d.verdict}">${d.verdict}</span>
-      </td>
-      <td style="color:#8b949e;max-width:200px;
-                 overflow:hidden;text-overflow:ellipsis;
-                 white-space:nowrap"
-          title="${d.reason}">${d.reason}</td>
-    </tr>
-  `).join('');
-}
 
-// ── Alert Feed ────────────────────────────────────────────
-function updateAlerts(alerts) {
-  const list = document.getElementById('alert-list');
-  if (!alerts.length) {
-    list.innerHTML =
-      '<div class="no-alerts">✓ No hijacks detected</div>';
-    return;
-  }
-  list.innerHTML = [...alerts].reverse().map(a => `
-    <div class="alert-item ${a.severity}">
-      <div class="alert-type">
-        ⚠ ${a.severity} — ${a.attack_type}
+  list.innerHTML = activityLog.map(item => `
+    <div class="activity-item ${item.cls}">
+      <span class="act-icon">${item.icon}</span>
+      <div class="act-body">
+        <div class="act-main">${item.main}</div>
+        <div class="act-sub">${item.sub}</div>
       </div>
-      <div class="alert-detail">
-        Prefix: <b>${a.prefix}</b><br>
-        Legit: AS${a.legit_origin} →
-        Rogue: AS${a.seen_origin}<br>
-        Confidence: ${(a.confidence*100).toFixed(0)}%
-      </div>
+      <span class="act-time">${item.time}</span>
     </div>
   `).join('');
 }
 
-// ── Network Graph (D3 force layout) ──────────────────────
-let svg, g, linkSel, nodeSel, labelSel;
-let nodes = [], links = [];
+// ── Stats ─────────────────────────────────────────────────
+function updateStats(s) {
+  const trusted = s.total_asns - s.isolated_asns;
+  document.getElementById('s-asns').textContent     = s.total_asns;
+  document.getElementById('s-isolated').textContent = s.isolated_asns;
+  document.getElementById('s-trusted').textContent  = trusted;
+  document.getElementById('s-prefixes').textContent = s.known_prefixes.toLocaleString();
+  document.getElementById('s-chain').textContent    = s.chain_length.toLocaleString();
+  document.getElementById('s-alerts').textContent   = s.alert_count;
+
+  const cv = document.getElementById('s-chain-valid');
+  cv.textContent = s.chain_valid ? 'VALID' : 'TAMPERED';
+  cv.className   = 'stat-val ' + (s.chain_valid ? 'success' : 'danger');
+}
+
+// ── Trust Table ───────────────────────────────────────────
+function compBar(val, type) {
+  const color = compColor(val, type);
+  const pct   = (val * 100).toFixed(0);
+  return `
+    <div class="comp-wrap">
+      <div class="comp-bar">
+        <div class="comp-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <span class="comp-val" style="color:${color}">${val.toFixed(2)}</span>
+    </div>`;
+}
+
+function updateTable(data) {
+  const tbody = document.getElementById('trust-table');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">
+      <span class="empty-icon">⏳</span>
+      No AS data yet — waiting for BGP updates
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(d => {
+    const color = scoreColor(d.final, d.is_isolated);
+    const pct   = (d.final * 100).toFixed(1);
+    return `
+    <tr class="${d.is_isolated ? 'isolated' : ''}">
+      <td class="asn-cell">AS${d.asn}</td>
+      <td>
+        <div class="score-wrap">
+          <div class="score-bar">
+            <div class="score-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span class="score-num" style="color:${color}">${d.final.toFixed(4)}</span>
+        </div>
+      </td>
+      <td>${compBar(d.wb, 'wb')}</td>
+      <td>${compBar(d.wd, 'wd')}</td>
+      <td>${compBar(d.wr, 'wr')}</td>
+      <td><span class="verdict ${d.verdict}">${d.verdict}</span></td>
+      <td style="color:var(--text2);font-size:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${d.reason}">${d.reason}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Network Graph ─────────────────────────────────────────
+function nodeRadius(d) {
+  return 6 + d.final * 18;
+}
 
 function initGraph() {
   svg = d3.select('#network-svg');
   g   = svg.append('g');
 
-  // Zoom + pan
   svg.call(d3.zoom()
-    .scaleExtent([0.3, 3])
+    .scaleExtent([0.3, 4])
     .on('zoom', e => g.attr('transform', e.transform))
   );
 
   simulation = d3.forceSimulation()
-    .force('link',
-      d3.forceLink().id(d => d.id).distance(80))
-    .force('charge', d3.forceManyBody().strength(-200))
-    .force('center',
-      d3.forceCenter(
-        svg.node().clientWidth  / 2,
-        svg.node().clientHeight / 2
-      ))
-    .force('collision',
-      d3.forceCollide().radius(d => nodeRadius(d) + 8));
-}
-
-function nodeRadius(d) {
-  return 8 + d.final * 20;
+    .force('link',    d3.forceLink().id(d => d.id).distance(70))
+    .force('charge',  d3.forceManyBody().strength(-180))
+    .force('center',  d3.forceCenter(
+      svg.node().clientWidth / 2,
+      svg.node().clientHeight / 2
+    ))
+    .force('collision', d3.forceCollide().radius(d => nodeRadius(d) + 10));
 }
 
 function updateGraph(data) {
   if (!svg) initGraph();
+
   const W = svg.node().clientWidth;
   const H = svg.node().clientHeight;
 
-  // Build node list
   const newNodes = data.map(d => {
-    const existing = nodes.find(n => n.id === d.asn);
+    const ex = nodes.find(n => n.id === d.asn);
     return {
       id:       d.asn,
       final:    d.final,
       isolated: d.is_isolated,
       verdict:  d.verdict,
       wb: d.wb, wd: d.wd, wr: d.wr,
-      x: existing ? existing.x : W/2 + (Math.random()-0.5)*200,
-      y: existing ? existing.y : H/2 + (Math.random()-0.5)*200,
-      vx: existing ? existing.vx : 0,
-      vy: existing ? existing.vy : 0,
+      x: ex ? ex.x : W/2 + (Math.random()-0.5)*200,
+      y: ex ? ex.y : H/2 + (Math.random()-0.5)*200,
+      vx: ex ? ex.vx : 0,
+      vy: ex ? ex.vy : 0,
     };
   });
 
-  // Build links — connect adjacent nodes
+  // Edges — connect each node to 2-3 neighbours
   const newLinks = [];
   for (let i = 0; i < newNodes.length; i++) {
-    for (let j = i+1; j < newNodes.length; j++) {
-      if (Math.random() < 0.25) {
-        newLinks.push({
-          source: newNodes[i].id,
-          target: newNodes[j].id,
-        });
+    const connected = new Set();
+    for (let j = 0; j < newNodes.length; j++) {
+      if (i === j) continue;
+      if (connected.size >= 3) break;
+      if (Math.random() < 0.3) {
+        newLinks.push({ source: newNodes[i].id, target: newNodes[j].id });
+        connected.add(j);
       }
     }
   }
@@ -639,52 +1055,59 @@ function updateGraph(data) {
   nodes = newNodes;
   links = newLinks;
 
-  // Links
   g.selectAll('.link').remove();
   linkSel = g.selectAll('.link')
     .data(links).enter()
     .append('line')
     .attr('class', 'link')
-    .attr('stroke', '#30363d')
-    .attr('stroke-width', 1)
-    .attr('stroke-opacity', 0.6);
+    .attr('stroke', '#1e3a5f')
+    .attr('stroke-width', 0.8)
+    .attr('stroke-opacity', 0.5);
 
-  // Nodes
-  g.selectAll('.node').remove();
-  nodeSel = g.selectAll('.node')
+  g.selectAll('.node-group').remove();
+  const nodeGroups = g.selectAll('.node-group')
     .data(nodes, d => d.id).enter()
-    .append('circle')
-    .attr('class', 'node')
-    .attr('r',    d => nodeRadius(d))
-    .attr('fill', d => scoreColor(d.final, d.isolated))
-    .attr('stroke', d => d.isolated ? '#f85149' : '#30363d')
-    .attr('stroke-width', d => d.isolated ? 2 : 1)
-    .attr('opacity', 0.9)
+    .append('g')
+    .attr('class', 'node-group')
     .style('cursor', 'pointer')
-    .on('mouseover', showTooltip)
-    .on('mousemove', moveTooltip)
-    .on('mouseout',  hideTooltip)
     .call(d3.drag()
       .on('start', dragStart)
       .on('drag',  dragging)
-      .on('end',   dragEnd));
+      .on('end',   dragEnd))
+    .on('mouseover', showTooltip)
+    .on('mousemove', moveTooltip)
+    .on('mouseout',  hideTooltip);
 
-  // Labels
-  g.selectAll('.label').remove();
-  labelSel = g.selectAll('.label')
-    .data(nodes, d => d.id).enter()
-    .append('text')
-    .attr('class', 'label')
+  // Glow ring for isolated nodes
+  nodeGroups.filter(d => d.isolated)
+    .append('circle')
+    .attr('r', d => nodeRadius(d) + 4)
+    .attr('fill', 'none')
+    .attr('stroke', '#ff3b3b')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.4)
+    .attr('stroke-dasharray', '3,3');
+
+  nodeGroups.append('circle')
+    .attr('r',    d => nodeRadius(d))
+    .attr('fill', d => scoreColor(d.final, d.isolated))
+    .attr('fill-opacity', 0.85)
+    .attr('stroke', d => d.isolated ? '#ff3b3b' : 'rgba(255,255,255,0.1)')
+    .attr('stroke-width', d => d.isolated ? 1.5 : 0.5);
+
+  nodeGroups.append('text')
     .attr('text-anchor', 'middle')
-    .attr('dy', d => nodeRadius(d) + 12)
-    .attr('fill', '#8b949e')
-    .attr('font-size', '10px')
+    .attr('dy', d => nodeRadius(d) + 11)
+    .attr('fill', '#5c8ab0')
+    .attr('font-size', '9px')
+    .attr('font-family', "'JetBrains Mono', monospace")
     .attr('pointer-events', 'none')
     .text(d => `AS${d.id}`);
 
-  simulation
-    .nodes(nodes)
-    .on('tick', ticked);
+  nodeSel    = nodeGroups;
+  labelSel   = null;
+
+  simulation.nodes(nodes).on('tick', ticked);
   simulation.force('link').links(links);
   simulation.alpha(0.3).restart();
 }
@@ -698,54 +1121,61 @@ function ticked() {
       .attr('y2', d => d.target.y);
   }
   if (nodeSel) {
-    nodeSel
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y);
-  }
-  if (labelSel) {
-    labelSel
-      .attr('x', d => d.x)
-      .attr('y', d => d.y);
+    nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
   }
 }
 
-// ── Drag ──────────────────────────────────────────────────
 function dragStart(event, d) {
   if (!event.active) simulation.alphaTarget(0.3).restart();
   d.fx = d.x; d.fy = d.y;
 }
-function dragging(event, d) {
-  d.fx = event.x; d.fy = event.y;
-}
+function dragging(event, d) { d.fx = event.x; d.fy = event.y; }
 function dragEnd(event, d) {
   if (!event.active) simulation.alphaTarget(0);
   d.fx = null; d.fy = null;
 }
 
 // ── Tooltip ───────────────────────────────────────────────
-const tooltip = document.getElementById('tooltip');
+const tooltip = document.getElementById('node-tooltip');
 
 function showTooltip(event, d) {
+  const color = scoreColor(d.final, d.isolated);
   tooltip.style.display = 'block';
   tooltip.innerHTML = `
-    <b style="color:#58a6ff">AS${d.id}</b><br>
-    Trust: <b style="color:${scoreColor(d.final, d.isolated)}">
-      ${d.final.toFixed(4)}</b><br>
-    WB: <span style="color:#f0883e">${d.wb.toFixed(3)}</span> &nbsp;
-    WD: <span style="color:#58a6ff">${d.wd.toFixed(3)}</span> &nbsp;
-    WR: <span style="color:#bc8cff">${d.wr.toFixed(3)}</span><br>
-    Status: <b>${d.verdict}</b>
+    <div class="tooltip-asn" style="color:${color}">AS${d.id}</div>
+    <div class="tooltip-row">
+      <span class="tooltip-label">Trust Score</span>
+      <span class="tooltip-value" style="color:${color}">${d.final.toFixed(4)}</span>
+    </div>
+    <div class="tooltip-row">
+      <span class="tooltip-label">WB (Security)</span>
+      <span class="tooltip-value" style="color:#a78bfa">${d.wb.toFixed(3)}</span>
+    </div>
+    <div class="tooltip-row">
+      <span class="tooltip-label">WD (Direct)</span>
+      <span class="tooltip-value" style="color:#4da6ff">${d.wd.toFixed(3)}</span>
+    </div>
+    <div class="tooltip-row">
+      <span class="tooltip-label">WR (Peer)</span>
+      <span class="tooltip-value" style="color:#00e5a0">${d.wr.toFixed(3)}</span>
+    </div>
+    <div class="tooltip-row" style="margin-top:4px; border-top:1px solid var(--border); padding-top:4px">
+      <span class="tooltip-label">Status</span>
+      <span class="tooltip-value" style="color:${d.isolated ? '#ff3b3b' : '#00e5a0'}">${d.verdict}</span>
+    </div>
   `;
 }
+
 function moveTooltip(event) {
-  tooltip.style.left = (event.clientX + 12) + 'px';
+  tooltip.style.left = (event.clientX + 14) + 'px';
   tooltip.style.top  = (event.clientY - 10) + 'px';
 }
+
 function hideTooltip() {
   tooltip.style.display = 'none';
 }
 
-// ── Init & Poll ───────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────
 initGraph();
 fetchAll();
 setInterval(fetchAll, 5000);
