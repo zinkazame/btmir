@@ -159,6 +159,51 @@ def get_isolated():
     """List ASNs of all currently isolated ASes."""
     return get_store().get_isolated()
 
+@app.get("/paths", tags=["Graph"])
+def get_paths():
+    """
+    Real AS edges extracted from actual BGP update paths.
+    Used by the dashboard to draw real routing topology.
+    """
+    store = get_store()
+    edges = store.get_as_edges()
+    paths = store.get_recent_paths(limit=50)
+
+    # Build node list from edges
+    node_asns = set()
+    for e in edges:
+        node_asns.add(e['source'])
+        node_asns.add(e['target'])
+
+    # Get trust scores for these nodes
+    nodes = []
+    for asn in node_asns:
+        rec = store.get_trust(asn)
+        nodes.append({
+            'asn':        asn,
+            'trust':      rec.final      if rec else 0.5,
+            'wb':         rec.wb         if rec else 0.5,
+            'wd':         rec.wd         if rec else 0.5,
+            'wr':         rec.wr         if rec else 0.5,
+            'is_isolated': rec.is_isolated if rec else False,
+            'verdict':    rec.verdict    if rec else 'UNKNOWN',
+        })
+
+    # Recent paths for display
+    recent = []
+    for p in paths[:20]:
+        hops = [int(x) for x in p['as_path'].split(',') if x]
+        recent.append({
+            'prefix':  p['prefix'],
+            'as_path': hops,
+            'origin':  p['origin_asn'],
+        })
+
+    return {
+        'nodes': nodes,
+        'edges': edges,
+        'recent_paths': recent,
+    }
 
 @app.get("/prefix/{prefix:path}", tags=["Prefix"])
 def get_prefix(prefix: str):

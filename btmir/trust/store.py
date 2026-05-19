@@ -54,6 +54,16 @@ CREATE TABLE IF NOT EXISTS audit_chain (
     prev_hash    TEXT    NOT NULL,
     block_hash   TEXT    NOT NULL UNIQUE
 );
+CREATE TABLE IF NOT EXISTS as_paths (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    prefix      TEXT    NOT NULL,
+    as_path     TEXT    NOT NULL,
+    origin_asn  INTEGER NOT NULL,
+    peer_asn    INTEGER NOT NULL,
+    recorded_at REAL    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_as_paths_time
+    ON as_paths(recorded_at DESC);
 """
 
 
@@ -331,6 +341,64 @@ class TrustStore:
                 "SELECT COUNT(*) as c FROM audit_chain"
             ).fetchone()["c"]
 
+    def record_as_path(self, prefix: str, as_path: List[int],
+                    origin_asn: int, peer_asn: int):
+        """Store a real AS path from a BGP update."""
+        with self._conn() as conn:
+            conn.execute("""
+                INSERT INTO as_paths
+                    (prefix, as_path, origin_asn, peer_asn, recorded_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                prefix,
+                ','.join(str(a) for a in as_path),
+                origin_asn, peer_asn, time.time()
+            ))
+            # Keep only last 500 paths to avoid bloat
+            conn.execute("""
+                DELETE FROM as_paths WHERE id NOT IN (
+                    SELECT id FROM as_paths
+                    ORDER BY recorded_at DESC LIMIT 500
+                )
+            """)
+
+    def get_recent_paths(self, limit: int = 100) -> List[Dict]:
+        """Get recent AS paths for graph visualization."""
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT prefix, as_path, origin_asn,
+                    peer_asn, recorded_at
+                FROM as_paths
+                ORDER BY recorded_at DESC LIMIT ?
+            """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_as_edges(self) -> List[Dict]:
+        """
+        Extract unique AS-to-AS edges from stored paths.
+        Returns list of {source, target, count} representing
+        real peering relationships seen in BGP updates.
+        """
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT as_path FROM as_paths
+                ORDER BY recorded_at DESC LIMIT 200
+            """).fetchall()
+
+        edge_counts = {}
+        for row in rows:
+            hops = [int(x) for x in row['as_path'].split(',') if x]
+            for i in range(len(hops) - 1):
+                key = (hops[i], hops[i+1])
+                edge_counts[key] = edge_counts.get(key, 0) + 1
+
+        return [
+            {'source': s, 'target': t, 'count': c}
+            for (s, t), c in edge_counts.items()
+        ]
+
+
+
     # ── Stats ──────────────────────────────────────────────
 
     def stats(self) -> Dict:
@@ -351,3 +419,4 @@ class TrustStore:
             "chain_length":   self.chain_length(),
             "chain_valid":    self.verify_chain(),
         }
+        

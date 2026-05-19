@@ -78,6 +78,14 @@ class BTMIR:
         self.store.record_prefix(update.prefix,
                                 update.origin_asn)
 
+        # Record real AS path for graph visualization
+        self.store.record_as_path(
+            update.prefix,
+            update.as_path,
+            update.origin_asn,
+            update.peer_asn,
+        )
+
         # Run hijack detection
         self.detector.inspect(update)
 
@@ -94,7 +102,7 @@ class BTMIR:
             )
             return
 
-        # Queue RPKI validation (runs async in background)
+        # Queue RPKI validation
         try:
             self._rpki_queue.put_nowait(
                 (update.origin_asn, update.prefix)
@@ -102,29 +110,24 @@ class BTMIR:
         except asyncio.QueueFull:
             pass
 
-        # Get RPKI result from cache (non-blocking)
-        rpki_result = self._rpki.get_cached(
+        # Get RPKI result from cache
+        rpki_result  = self._rpki.get_cached(
             update.origin_asn, update.prefix
         )
-        rpki_valid = rpki_result.valid if rpki_result else False
-
-        # Use AS-level RPKI fraction for WB if we have enough data
+        rpki_valid   = rpki_result.valid if rpki_result else False
         rpki_fraction = self._rpki.rpki_valid_fraction(asn)
-        if rpki_fraction != 0.5:   # 0.5 means no data yet
+        if rpki_fraction != 0.5:
             rpki_valid = rpki_fraction > 0.5
 
-        # Compute trust score
+        # Compute trust for origin AS
         history = self.store.get_interactions(asn)
         recs    = self._get_recommendations(asn)
-
-        result = compute_trust(
+        result  = compute_trust(
             update              = update,
             rpki_valid          = rpki_valid,
             interaction_history = history,
             recommendations     = recs,
         )
-
-        # Persist trust score
         self.store.save_trust(result)
 
         # Record interaction
@@ -135,12 +138,34 @@ class BTMIR:
             epoch    = self._epoch,
         )
 
+        # Evaluate all transit ASes in the path
+        for hop_asn in set(update.as_path):
+            if hop_asn == update.origin_asn:
+                continue
+            hop_update = BGPUpdate(
+                timestamp  = update.timestamp,
+                peer_asn   = update.peer_asn,
+                peer_ip    = update.peer_ip,
+                prefix     = update.prefix,
+                as_path    = update.as_path,
+                origin_asn = hop_asn,
+                announced  = update.announced,
+            )
+            hop_history = self.store.get_interactions(hop_asn)
+            hop_recs    = self._get_recommendations(hop_asn)
+            hop_result  = compute_trust(
+                update              = hop_update,
+                rpki_valid          = False,
+                interaction_history = hop_history,
+                recommendations     = hop_recs,
+            )
+            self.store.save_trust(hop_result)
+
         if result.is_isolated:
             log.warning(
                 f"ISOLATED AS{asn} | "
                 f"prefix={update.prefix} | "
-                f"T={result.final:.3f} | "
-                f"rpki_valid={rpki_valid}"
+                f"T={result.final:.3f}"
             )
 
     def _on_hijack(self, alert: HijackAlert):

@@ -33,3 +33,6 @@ class TrustScore:
     final:       float   # T = alpha*WB + beta*WD + gamma*WR
     is_isolated: bool    # True if final score is below threshold
     reason:      str     # human readable explanation of the decision
+    @property
+    def verdict(self) -> str:
+        return "ISOLATED" if self.is_isolated else "TRUSTED"

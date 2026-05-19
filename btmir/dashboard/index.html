@@ -6,26 +6,25 @@
   <title>BTMIR — BGP Trust Monitor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <style>
     :root {
-      --bg:       #080c10;
-      --surface:  #0d1520;
-      --panel:    #111d2e;
-      --border:   #1e3a5f;
-      --border2:  #0f2a45;
-      --green:    #00e5a0;
-      --green2:   #00b87a;
-      --amber:    #f5a623;
-      --orange:   #ff6b35;
-      --red:      #ff3b3b;
-      --blue:     #4da6ff;
-      --purple:   #a78bfa;
-      --text:     #c8dff5;
-      --text2:    #5c8ab0;
-      --text3:    #2d5a80;
-      --mono:     'JetBrains Mono', monospace;
-      --display:  'Syne', sans-serif;
+      --bg:      #080c10;
+      --surface: #0d1520;
+      --panel:   #111d2e;
+      --border:  #1e3a5f;
+      --border2: #0f2a45;
+      --green:   #00e5a0;
+      --green2:  #00b87a;
+      --amber:   #f5a623;
+      --orange:  #ff6b35;
+      --red:     #ff3b3b;
+      --blue:    #4da6ff;
+      --purple:  #a78bfa;
+      --text:    #c8dff5;
+      --text2:   #5c8ab0;
+      --text3:   #2d5a80;
+      --mono:    'JetBrains Mono', monospace;
+      --display: 'Syne', sans-serif;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -40,17 +39,13 @@
       flex-direction: column;
     }
 
-    /* ── Scanline overlay ── */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.03) 2px,
-        rgba(0,0,0,0.03) 4px
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
       );
       pointer-events: none;
       z-index: 1000;
@@ -68,7 +63,6 @@
       flex-shrink: 0;
       position: relative;
     }
-
     header::after {
       content: '';
       position: absolute;
@@ -77,40 +71,31 @@
       background: linear-gradient(90deg, transparent, var(--green), transparent);
       opacity: 0.4;
     }
-
     .logo {
       font-family: var(--display);
       font-size: 15px;
       font-weight: 800;
       letter-spacing: 2px;
-      color: var(--text);
       display: flex;
       align-items: center;
       gap: 10px;
     }
-
     .logo-accent { color: var(--green); }
-
     .logo-tag {
       font-family: var(--mono);
       font-size: 9px;
-      font-weight: 400;
       color: var(--text3);
       letter-spacing: 1px;
-      text-transform: uppercase;
       border: 1px solid var(--border);
       padding: 2px 6px;
       border-radius: 2px;
     }
-
     .header-right {
       display: flex;
       align-items: center;
       gap: 20px;
       font-size: 10px;
-      color: var(--text2);
     }
-
     .live-indicator {
       display: flex;
       align-items: center;
@@ -119,7 +104,6 @@
       font-weight: 600;
       letter-spacing: 1px;
     }
-
     .live-dot {
       width: 7px; height: 7px;
       background: var(--green);
@@ -127,19 +111,13 @@
       box-shadow: 0 0 8px var(--green);
       animation: livepulse 2s infinite;
     }
-
     @keyframes livepulse {
-      0%,100% { opacity:1; box-shadow: 0 0 8px var(--green); }
-      50%      { opacity:0.4; box-shadow: 0 0 2px var(--green); }
+      0%,100% { opacity:1; box-shadow:0 0 8px var(--green); }
+      50%      { opacity:0.4; box-shadow:0 0 2px var(--green); }
     }
-
-    .header-stat {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
-    .header-stat-val { color: var(--text); font-size: 11px; font-weight: 600; }
-    .header-stat-lbl { color: var(--text3); font-size: 9px; letter-spacing: 0.5px; }
+    .header-stat { display:flex; flex-direction:column; align-items:flex-end; }
+    .header-stat-val { color:var(--text); font-size:11px; font-weight:600; }
+    .header-stat-lbl { color:var(--text3); font-size:9px; letter-spacing:0.5px; }
 
     /* ── Stats Bar ── */
     .stats-bar {
@@ -149,7 +127,6 @@
       gap: 1px;
       flex-shrink: 0;
     }
-
     .stat-card {
       background: var(--surface);
       padding: 10px 16px;
@@ -160,14 +137,8 @@
       position: relative;
       transition: background 0.15s;
     }
-
     .stat-card:hover { background: var(--panel); }
-
-    .stat-card:hover .stat-tooltip {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
+    .stat-card:hover .stat-tooltip { opacity:1; pointer-events:auto; }
     .stat-tooltip {
       position: absolute;
       top: calc(100% + 6px);
@@ -187,7 +158,6 @@
       line-height: 1.6;
       text-align: center;
     }
-
     .stat-val {
       font-size: 20px;
       font-weight: 700;
@@ -195,12 +165,10 @@
       line-height: 1;
       font-variant-numeric: tabular-nums;
     }
-
     .stat-val.danger  { color: var(--red); }
     .stat-val.success { color: var(--green); }
     .stat-val.warn    { color: var(--amber); }
     .stat-val.purple  { color: var(--purple); }
-
     .stat-lbl {
       font-size: 9px;
       color: var(--text3);
@@ -212,7 +180,7 @@
     .main {
       display: grid;
       grid-template-columns: 1fr 320px;
-      grid-template-rows: 1fr 220px;
+      grid-template-rows: 1fr 200px;
       gap: 1px;
       background: var(--border2);
       flex: 1;
@@ -220,14 +188,13 @@
       min-height: 0;
     }
 
-    /* ── Graph Panel ── */
+    /* ── Sankey Panel ── */
     .graph-panel {
       background: var(--bg);
       position: relative;
       overflow: hidden;
       grid-row: 1;
     }
-
     .graph-header {
       position: absolute;
       top: 0; left: 0; right: 0;
@@ -238,7 +205,6 @@
       z-index: 10;
       background: linear-gradient(180deg, rgba(8,12,16,0.95) 0%, transparent 100%);
     }
-
     .panel-title {
       font-size: 9px;
       font-weight: 600;
@@ -246,14 +212,11 @@
       text-transform: uppercase;
       letter-spacing: 1.5px;
     }
-
-    /* ── Graph Legend ── */
     .graph-legend {
       display: flex;
       gap: 14px;
       align-items: center;
     }
-
     .legend-item {
       display: flex;
       align-items: center;
@@ -261,13 +224,11 @@
       font-size: 9px;
       color: var(--text2);
     }
-
     .legend-dot {
       width: 10px; height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
     }
-
     .legend-size {
       font-size: 8px;
       color: var(--text3);
@@ -275,13 +236,115 @@
       border-left: 1px solid var(--border);
       padding-left: 8px;
     }
-
-    #network-svg {
-      width: 100%;
-      height: 100%;
+    #sankey-container {
+      position: absolute;
+      inset: 36px 0 0 0;
+      overflow-y: auto;
+      padding: 8px 0 80px 0;
     }
 
-    /* ── Trust Model Info Box ── */
+    /* ── Sankey path styles ── */
+    .path-group { margin-bottom: 14px; }
+    .path-group-header {
+      font-size: 9px;
+      color: var(--text2);
+      padding: 4px 14px;
+      background: rgba(30,58,95,0.2);
+      border-left: 2px solid var(--border);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .path-group-prefix { color: var(--blue); font-weight: 600; }
+    .path-group-count  { color: var(--text3); }
+    .sankey-row {
+      display: flex;
+      align-items: center;
+      padding: 4px 14px;
+      gap: 0;
+      margin-bottom: 6px;
+    }
+    .sankey-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .sankey-box {
+      border-radius: 3px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: var(--mono);
+      border: 1px solid;
+      white-space: nowrap;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .sankey-box:hover { filter: brightness(1.25); transform: scale(1.05); }
+    .sankey-box.isolated { animation: isopulse 2s infinite; }
+    @keyframes isopulse {
+      0%,100% { box-shadow: 0 0 0 rgba(255,59,59,0); }
+      50%      { box-shadow: 0 0 10px rgba(255,59,59,0.6); }
+    }
+    .sankey-score {
+      font-size: 8px;
+      margin-top: 3px;
+      text-align: center;
+    }
+    .sankey-edge {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      position: relative;
+      min-width: 24px;
+    }
+    .sankey-line {
+      width: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .sankey-arrow {
+      position: absolute;
+      right: -5px;
+      font-size: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .sankey-count {
+      position: absolute;
+      top: -11px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: var(--text3);
+      background: var(--bg);
+      padding: 0 3px;
+      white-space: nowrap;
+    }
+    .prepend-badge {
+      position: absolute;
+      top: -8px;
+      right: -6px;
+      background: var(--amber);
+      color: #000;
+      font-size: 7px;
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 2px;
+    }
+    .sankey-empty {
+      text-align: center;
+      color: var(--text3);
+      padding: 60px 20px;
+      font-size: 11px;
+      line-height: 2.5;
+    }
+
+    /* ── Model box ── */
     .model-box {
       position: absolute;
       bottom: 12px;
@@ -294,33 +357,12 @@
       z-index: 10;
       backdrop-filter: blur(4px);
     }
+    .model-box-title { color:var(--green); font-weight:600; letter-spacing:1px; margin-bottom:6px; text-transform:uppercase; }
+    .model-formula   { color:var(--text); font-size:11px; margin-bottom:6px; }
+    .model-row       { display:flex; gap:6px; color:var(--text2); margin-bottom:2px; line-height:1.5; }
+    .model-key       { color:var(--amber); font-weight:600; width:14px; }
 
-    .model-box-title {
-      color: var(--green);
-      font-weight: 600;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-    }
-
-    .model-formula {
-      color: var(--text);
-      font-size: 11px;
-      margin-bottom: 6px;
-      letter-spacing: 0.5px;
-    }
-
-    .model-row {
-      display: flex;
-      gap: 6px;
-      color: var(--text2);
-      margin-bottom: 2px;
-      line-height: 1.5;
-    }
-
-    .model-key { color: var(--amber); font-weight: 600; width: 14px; }
-
-    /* ── Right Column ── */
+    /* ── Right column ── */
     .right-col {
       display: flex;
       flex-direction: column;
@@ -328,8 +370,6 @@
       background: var(--border2);
       grid-row: 1;
     }
-
-    /* ── Activity Feed ── */
     .activity-panel {
       background: var(--surface);
       display: flex;
@@ -337,7 +377,6 @@
       overflow: hidden;
       flex: 1;
     }
-
     .panel-head {
       padding: 8px 14px;
       border-bottom: 1px solid var(--border2);
@@ -346,33 +385,10 @@
       justify-content: space-between;
       flex-shrink: 0;
     }
-
-    .panel-head-title {
-      font-size: 9px;
-      font-weight: 600;
-      color: var(--text3);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-
-    .badge {
-      font-size: 9px;
-      font-weight: 700;
-      padding: 1px 7px;
-      border-radius: 10px;
-      letter-spacing: 0.5px;
-    }
-
-    .badge-red    { background: rgba(255,59,59,0.15); color: var(--red);    border: 1px solid rgba(255,59,59,0.3); }
-    .badge-green  { background: rgba(0,229,160,0.1);  color: var(--green);  border: 1px solid rgba(0,229,160,0.2); }
-    .badge-amber  { background: rgba(245,166,35,0.1); color: var(--amber);  border: 1px solid rgba(245,166,35,0.2); }
-
-    .activity-list {
-      overflow-y: auto;
-      flex: 1;
-      padding: 6px;
-    }
-
+    .panel-head-title { font-size:9px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px; }
+    .badge { font-size:9px; font-weight:700; padding:1px 7px; border-radius:10px; }
+    .badge-green { background:rgba(0,229,160,0.1); color:var(--green); border:1px solid rgba(0,229,160,0.2); }
+    .activity-list { overflow-y:auto; flex:1; padding:6px; }
     .activity-item {
       display: flex;
       gap: 8px;
@@ -382,35 +398,23 @@
       font-size: 10px;
       line-height: 1.5;
       border-left: 2px solid transparent;
-      transition: background 0.1s;
       animation: fadeIn 0.3s ease;
     }
-
     @keyframes fadeIn {
-      from { opacity:0; transform: translateX(4px); }
-      to   { opacity:1; transform: translateX(0); }
+      from { opacity:0; transform:translateX(4px); }
+      to   { opacity:1; transform:translateX(0); }
     }
-
-    .activity-item:hover { background: var(--panel); }
+    .activity-item:hover  { background: var(--panel); }
     .activity-item.allow  { border-left-color: var(--green2); }
-    .activity-item.block  { border-left-color: var(--red);    background: rgba(255,59,59,0.04); }
-    .activity-item.hijack { border-left-color: var(--amber);  background: rgba(245,166,35,0.05); }
+    .activity-item.block  { border-left-color: var(--red); background:rgba(255,59,59,0.04); }
+    .activity-item.hijack { border-left-color: var(--amber); background:rgba(245,166,35,0.05); }
+    .act-icon { font-size:11px; flex-shrink:0; margin-top:1px; }
+    .act-body { flex:1; min-width:0; }
+    .act-main { color:var(--text); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .act-sub  { color:var(--text3); font-size:9px; margin-top:1px; }
+    .act-time { font-size:9px; color:var(--text3); flex-shrink:0; }
 
-    .act-icon { font-size: 11px; flex-shrink: 0; margin-top: 1px; }
-    .act-body { flex: 1; min-width: 0; }
-    .act-main { color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .act-sub  { color: var(--text3); font-size: 9px; margin-top: 1px; }
-    .act-time { font-size: 9px; color: var(--text3); flex-shrink: 0; }
-
-    .no-activity {
-      text-align: center;
-      color: var(--text3);
-      font-size: 11px;
-      padding: 30px 20px;
-      line-height: 2;
-    }
-
-    /* ── Bottom Table ── */
+    /* ── Table ── */
     .table-panel {
       background: var(--surface);
       grid-column: 1 / -1;
@@ -418,7 +422,6 @@
       flex-direction: column;
       overflow: hidden;
     }
-
     .table-head {
       padding: 8px 16px;
       border-bottom: 1px solid var(--border2);
@@ -427,15 +430,8 @@
       justify-content: space-between;
       flex-shrink: 0;
     }
-
-    .table-scroll { overflow-y: auto; flex: 1; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-
+    .table-scroll { overflow-y:auto; flex:1; }
+    table { width:100%; border-collapse:collapse; font-size:11px; }
     thead th {
       background: var(--surface);
       padding: 6px 14px;
@@ -450,113 +446,25 @@
       border-bottom: 1px solid var(--border2);
       white-space: nowrap;
     }
-
-    thead th .th-hint {
-      font-size: 8px;
-      color: var(--text3);
-      opacity: 0.6;
-      font-weight: 400;
-      margin-left: 3px;
-    }
-
-    tbody tr {
-      border-bottom: 1px solid rgba(30,58,95,0.3);
-      transition: background 0.1s;
-    }
-
+    .th-hint { font-size:8px; opacity:0.6; font-weight:400; margin-left:3px; }
+    tbody tr { border-bottom:1px solid rgba(30,58,95,0.3); transition:background 0.1s; }
     tbody tr:hover { background: var(--panel); }
     tbody tr.isolated { background: rgba(255,59,59,0.04); }
+    tbody td { padding:7px 14px; color:var(--text); white-space:nowrap; }
+    .asn-cell { font-family:var(--mono); color:var(--blue); font-weight:600; font-size:12px; }
+    .score-wrap { display:flex; align-items:center; gap:8px; }
+    .score-bar  { height:4px; width:100px; background:rgba(30,58,95,0.5); border-radius:2px; overflow:hidden; }
+    .score-fill { height:100%; border-radius:2px; transition:width 0.5s ease; }
+    .score-num  { font-family:var(--mono); font-size:11px; color:var(--text2); width:42px; text-align:right; font-variant-numeric:tabular-nums; }
+    .comp-wrap { display:flex; align-items:center; gap:4px; }
+    .comp-bar  { height:12px; width:40px; background:rgba(30,58,95,0.3); border-radius:2px; overflow:hidden; }
+    .comp-fill { height:100%; border-radius:2px; }
+    .comp-val  { font-size:10px; color:var(--text2); width:30px; font-variant-numeric:tabular-nums; }
+    .verdict { padding:2px 8px; border-radius:2px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+    .verdict.TRUSTED  { background:rgba(0,229,160,0.1); color:var(--green); border:1px solid rgba(0,229,160,0.25); }
+    .verdict.ISOLATED { background:rgba(255,59,59,0.1);  color:var(--red);   border:1px solid rgba(255,59,59,0.25); }
 
-    tbody td {
-      padding: 7px 14px;
-      color: var(--text);
-      white-space: nowrap;
-    }
-
-    .asn-cell {
-      font-family: var(--mono);
-      color: var(--blue);
-      font-weight: 600;
-      font-size: 12px;
-    }
-
-    /* Score bar */
-    .score-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .score-bar {
-      height: 4px;
-      width: 100px;
-      background: rgba(30,58,95,0.5);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .score-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: width 0.5s ease;
-    }
-
-    .score-num {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text2);
-      width: 42px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Component bars */
-    .comp-wrap {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .comp-bar {
-      height: 12px;
-      width: 40px;
-      background: rgba(30,58,95,0.3);
-      border-radius: 2px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .comp-fill {
-      height: 100%;
-      border-radius: 2px;
-    }
-
-    .comp-val {
-      font-size: 10px;
-      color: var(--text2);
-      width: 30px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Verdict badge */
-    .verdict {
-      padding: 2px 8px;
-      border-radius: 2px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .verdict.TRUSTED  { background: rgba(0,229,160,0.1); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
-    .verdict.ISOLATED { background: rgba(255,59,59,0.1);  color: var(--red);   border: 1px solid rgba(255,59,59,0.25); }
-
-    .updates-cell {
-      color: var(--text2);
-      font-size: 10px;
-    }
-
-    /* ── Tooltip ── */
+    /* ── Node tooltip ── */
     .node-tooltip {
       position: fixed;
       background: var(--panel);
@@ -571,43 +479,16 @@
       min-width: 180px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
+    .tooltip-asn { font-family:var(--display); font-size:14px; font-weight:700; margin-bottom:6px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+    .tooltip-row { display:flex; justify-content:space-between; gap:16px; }
+    .tooltip-label { color:var(--text3); }
+    .tooltip-value { color:var(--text); font-weight:600; }
 
-    .tooltip-asn {
-      font-family: var(--display);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--blue);
-      margin-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 6px;
-    }
-
-    .tooltip-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .tooltip-label { color: var(--text3); }
-    .tooltip-value { color: var(--text); font-weight: 600; }
-
-    /* ── Scrollbars ── */
-    ::-webkit-scrollbar { width: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    /* ── Empty ── */
-    .empty-state {
-      text-align: center;
-      color: var(--text3);
-      padding: 30px;
-      font-size: 10px;
-      line-height: 2.5;
-    }
-
-    .empty-icon { font-size: 24px; display: block; margin-bottom: 8px; opacity: 0.4; }
+    ::-webkit-scrollbar { width:3px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
   </style>
-</head>
+  </head>
 <body>
 
 <!-- Header -->
@@ -615,7 +496,7 @@
   <div class="logo">
     <span>BTMIR</span>
     <span class="logo-accent">//</span>
-    <span style="font-weight:400; font-size:12px; color:var(--text2)">BGP Trust Monitor</span>
+    <span style="font-weight:400;font-size:12px;color:var(--text2)">BGP Trust Monitor</span>
     <span class="logo-tag">LIVE</span>
   </div>
   <div class="header-right">
@@ -624,8 +505,8 @@
       <span class="header-stat-lbl">Uptime</span>
     </div>
     <div class="header-stat">
-      <span class="header-stat-val" id="h-updates">—</span>
-      <span class="header-stat-lbl">BGP Updates</span>
+      <span class="header-stat-val" id="h-prefixes">—</span>
+      <span class="header-stat-lbl">Prefixes Tracked</span>
     </div>
     <div class="header-stat">
       <span class="header-stat-val" id="h-lastupdate">Connecting…</span>
@@ -640,96 +521,90 @@
 
 <!-- Stats Bar -->
 <div class="stats-bar">
-
   <div class="stat-card">
     <span class="stat-val" id="s-asns">—</span>
     <span class="stat-lbl">Tracked ASes</span>
     <div class="stat-tooltip">Autonomous Systems seen<br>in the BGP stream so far</div>
   </div>
-
   <div class="stat-card">
     <span class="stat-val danger" id="s-isolated">—</span>
     <span class="stat-lbl">Isolated</span>
     <div class="stat-tooltip">ASes with trust score ≤ 0.40<br>Routes from these are withdrawn</div>
   </div>
-
   <div class="stat-card">
-    <span class="stat-val" id="s-trusted">—</span>
+    <span class="stat-val success" id="s-trusted">—</span>
     <span class="stat-lbl">Trusted</span>
     <div class="stat-tooltip">ASes with trust score > 0.40<br>Routes from these are announced</div>
   </div>
-
   <div class="stat-card">
     <span class="stat-val" id="s-prefixes">—</span>
     <span class="stat-lbl">IP Prefixes</span>
     <div class="stat-tooltip">Distinct IP blocks tracked<br>Used for hijack detection</div>
   </div>
-
   <div class="stat-card">
     <span class="stat-val purple" id="s-chain">—</span>
     <span class="stat-lbl">Audit Blocks</span>
     <div class="stat-tooltip">SHA-256 hash-chained records<br>Every trust change is permanent</div>
   </div>
-
   <div class="stat-card">
     <span class="stat-val success" id="s-chain-valid">—</span>
     <span class="stat-lbl">Chain Integrity</span>
     <div class="stat-tooltip">Verifies audit chain has not<br>been tampered with</div>
   </div>
-
   <div class="stat-card">
     <span class="stat-val warn" id="s-alerts">—</span>
     <span class="stat-lbl">Hijack Alerts</span>
     <div class="stat-tooltip">Suspected prefix hijacks detected<br>via origin change or sub-prefix attack</div>
   </div>
-
 </div>
 
-<!-- Main -->
+<!-- Main Layout -->
 <div class="main">
 
-  <!-- Network Graph -->
+  <!-- Sankey Panel -->
   <div class="graph-panel">
     <div class="graph-header">
-      <span class="panel-title">AS Trust Network</span>
+      <span class="panel-title">BGP AS Path Flow — Real Routing Topology</span>
       <div class="graph-legend">
         <div class="legend-item">
           <div class="legend-dot" style="background:#00e5a0"></div>
-          High trust (T > 0.70)
+          High trust (T&gt;0.70)
         </div>
         <div class="legend-item">
           <div class="legend-dot" style="background:#f5a623"></div>
-          Medium (0.40 – 0.70)
+          Medium (0.40–0.70)
         </div>
         <div class="legend-item">
-          <div class="legend-dot" style="background:#ff6b35"></div>
-          Low (near threshold)
+          <div class="legend-dot" style="background:#ff3b3b;box-shadow:0 0 6px #ff3b3b"></div>
+          Isolated (T≤0.40)
         </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#ff3b3b; box-shadow:0 0 6px #ff3b3b"></div>
-          Isolated (T ≤ 0.40)
-        </div>
-        <div class="legend-item legend-size">
-          Node size = trust score
+        <div class="legend-size">
+          Edge thickness = path frequency
         </div>
       </div>
     </div>
-    <svg id="network-svg"></svg>
 
-    <!-- Trust model explanation -->
+    <div id="sankey-container">
+      <div class="sankey-empty">
+        📡 Waiting for BGP path data…<br>
+        <span style="font-size:9px">Real AS paths appear here as BGP updates arrive</span>
+      </div>
+    </div>
+
     <div class="model-box">
       <div class="model-box-title">Trust Formula</div>
       <div class="model-formula">T = α·WB + β·WD + γ·WR</div>
       <div class="model-row"><span class="model-key">WB</span><span>Security posture (RPKI + path anomaly) · α=0.30</span></div>
       <div class="model-row"><span class="model-key">WD</span><span>Direct interaction history (time-decayed) · β=0.40</span></div>
       <div class="model-row"><span class="model-key">WR</span><span>Peer recommendations (collusion-resistant) · γ=0.30</span></div>
-      <div class="model-row" style="margin-top:4px; color:var(--red)">
-        <span class="model-key">✗</span><span>T ≤ 0.40 → Isolated · Routes withdrawn</span>
+      <div class="model-row" style="margin-top:4px;color:var(--red)">
+        <span class="model-key">✗</span>
+        <span>T ≤ 0.40 → Isolated · Routes withdrawn</span>
       </div>
     </div>
   </div>
 
-  <!-- Right: Activity Feed -->
+  <!-- Activity Feed -->
   <div class="right-col">
     <div class="activity-panel">
       <div class="panel-head">
@@ -737,27 +612,27 @@
         <span class="badge badge-green" id="activity-count">0 events</span>
       </div>
       <div class="activity-list" id="activity-list">
-        <div class="no-activity">
-          <span class="empty-icon">📡</span>
-          Waiting for BGP updates…<br>
-          <span style="font-size:9px">Connect to RIPE RIS Live to see live routing events</span>
+        <div style="text-align:center;color:var(--text3);padding:30px;font-size:10px;line-height:2.5">
+          📡 Waiting for BGP updates…
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Bottom: Trust Table -->
+  <!-- Trust Table -->
   <div class="table-panel">
     <div class="table-head">
       <span class="panel-head-title">AS Trust Scores</span>
-      <span style="font-size:9px; color:var(--text3)">Auto-refresh every 5s · Sorted by trust score</span>
+      <span style="font-size:9px;color:var(--text3)">
+        Auto-refresh every 5s · Sorted by trust score
+      </span>
     </div>
     <div class="table-scroll">
       <table>
         <thead>
           <tr>
             <th>ASN</th>
-            <th>Trust Score <span class="th-hint">T = α·WB + β·WD + γ·WR</span></th>
+            <th>Trust Score <span class="th-hint">T=α·WB+β·WD+γ·WR</span></th>
             <th>WB <span class="th-hint">Security</span></th>
             <th>WD <span class="th-hint">Direct History</span></th>
             <th>WR <span class="th-hint">Peer Opinion</span></th>
@@ -773,89 +648,92 @@
 </div>
 
 <div class="node-tooltip" id="node-tooltip"></div>
-
 <script>
 const API = 'http://localhost:8000';
-let trustData  = [];
-let activityLog = [];   // rolling activity log
-let simulation = null;
-let svg, g, linkSel, nodeSel, labelSel;
-let nodes = [], links = [];
-let startTime = Date.now();
+let trustMap    = {};
+let activityLog = [];
+let startTime   = Date.now();
+let prevTrust   = {};
+let prevAlerts  = 0;
 
-// ── Colour helpers ────────────────────────────────────────
+// ── Colors ────────────────────────────────────────────────
 function scoreColor(score, isolated) {
-  if (isolated) return '#ff3b3b';
+  if (isolated)    return '#ff3b3b';
   if (score > 0.70) return '#00e5a0';
   if (score > 0.55) return '#f5a623';
   if (score > 0.40) return '#ff6b35';
   return '#ff3b3b';
 }
 
-function compColor(val, type) {
-  const colors = { wb: '#a78bfa', wd: '#4da6ff', wr: '#00e5a0' };
-  return colors[type] || '#4da6ff';
+function scoreBg(score, isolated) {
+  if (isolated)    return 'rgba(255,59,59,0.12)';
+  if (score > 0.70) return 'rgba(0,229,160,0.1)';
+  if (score > 0.55) return 'rgba(245,166,35,0.1)';
+  return 'rgba(255,107,53,0.1)';
 }
 
 // ── Uptime ────────────────────────────────────────────────
 function formatUptime(ms) {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  const h = Math.floor(m/60);
   if (h > 0) return `${h}h ${m%60}m`;
   if (m > 0) return `${m}m ${s%60}s`;
   return `${s}s`;
 }
 
-// ── Fetch ─────────────────────────────────────────────────
+// ── Fetch all data ────────────────────────────────────────
 async function fetchAll() {
   try {
-    const [trust, alerts, stats] = await Promise.all([
+    const [trust, alerts, stats, pathData] = await Promise.all([
       fetch(`${API}/trust`).then(r => r.json()),
       fetch(`${API}/alerts`).then(r => r.json()),
       fetch(`${API}/stats`).then(r => r.json()),
+      fetch(`${API}/paths`).then(r => r.json()),
     ]);
 
-    // Detect changes for activity log
-    detectChanges(trust, alerts);
+    trustMap = {};
+    trust.forEach(d => { trustMap[d.asn] = d; });
 
-    trustData = trust;
+    detectChanges(trust, alerts);
     updateStats(stats);
     updateTable(trust);
-    updateGraph(trust);
+    updateSankey(pathData);
 
-    document.getElementById('h-uptime').textContent =
-      formatUptime(Date.now() - startTime);
-    document.getElementById('h-updates').textContent =
-      stats.known_prefixes.toLocaleString();
-    document.getElementById('h-lastupdate').textContent =
-      new Date().toLocaleTimeString();
+    document.getElementById('h-uptime').textContent     = formatUptime(Date.now() - startTime);
+    document.getElementById('h-prefixes').textContent   = stats.known_prefixes.toLocaleString();
+    document.getElementById('h-lastupdate').textContent = new Date().toLocaleTimeString();
 
   } catch(e) {
     document.getElementById('h-lastupdate').textContent = 'API offline';
   }
 }
 
-// ── Activity log ──────────────────────────────────────────
-let prevTrust = {};
-let prevAlerts = 0;
+// ── Stats Bar ─────────────────────────────────────────────
+function updateStats(s) {
+  document.getElementById('s-asns').textContent     = s.total_asns;
+  document.getElementById('s-isolated').textContent = s.isolated_asns;
+  document.getElementById('s-trusted').textContent  = s.total_asns - s.isolated_asns;
+  document.getElementById('s-prefixes').textContent = s.known_prefixes.toLocaleString();
+  document.getElementById('s-chain').textContent    = s.chain_length.toLocaleString();
+  document.getElementById('s-alerts').textContent   = s.alert_count;
+  const cv = document.getElementById('s-chain-valid');
+  cv.textContent = s.chain_valid ? 'VALID' : 'TAMPERED';
+  cv.className   = 'stat-val ' + (s.chain_valid ? 'success' : 'danger');
+}
 
+// ── Activity Feed ─────────────────────────────────────────
 function detectChanges(trust, alerts) {
-  // New ASes or score changes
   trust.forEach(d => {
     const prev = prevTrust[d.asn];
-    if (!prev) {
+    if (!prev)
       addActivity('new', d);
-    } else if (prev.is_isolated !== d.is_isolated) {
+    else if (prev.is_isolated !== d.is_isolated)
       addActivity(d.is_isolated ? 'isolated' : 'recovered', d);
-    }
     prevTrust[d.asn] = d;
   });
-
-  // New hijack alerts
   if (alerts.length > prevAlerts) {
-    const newAlerts = alerts.slice(prevAlerts);
-    newAlerts.forEach(a => addActivity('hijack', null, a));
+    alerts.slice(prevAlerts).forEach(a => addActivity('hijack', null, a));
     prevAlerts = alerts.length;
   }
 }
@@ -863,41 +741,34 @@ function detectChanges(trust, alerts) {
 function addActivity(type, asData, alertData) {
   const now = new Date().toLocaleTimeString();
   let item;
-
-  if (type === 'new') {
+  if (type === 'new')
     item = {
-      cls:  'allow',
-      icon: '🌐',
+      cls: 'allow', icon: '🌐',
       main: `AS${asData.asn} first seen`,
       sub:  `T=${asData.final.toFixed(3)} · ${asData.verdict}`,
       time: now,
     };
-  } else if (type === 'isolated') {
+  else if (type === 'isolated')
     item = {
-      cls:  'block',
-      icon: '🚫',
+      cls: 'block', icon: '🚫',
       main: `AS${asData.asn} ISOLATED`,
       sub:  `Trust fell to ${asData.final.toFixed(3)} · routes withdrawn`,
       time: now,
     };
-  } else if (type === 'recovered') {
+  else if (type === 'recovered')
     item = {
-      cls:  'allow',
-      icon: '✅',
+      cls: 'allow', icon: '✅',
       main: `AS${asData.asn} recovered`,
       sub:  `Trust rose to ${asData.final.toFixed(3)}`,
       time: now,
     };
-  } else if (type === 'hijack') {
+  else if (type === 'hijack')
     item = {
-      cls:  'hijack',
-      icon: '⚠️',
+      cls: 'hijack', icon: '⚠️',
       main: `HIJACK: ${alertData.prefix}`,
-      sub:  `Legit: AS${alertData.legit_origin} → Rogue: AS${alertData.seen_origin} · ${(alertData.confidence*100).toFixed(0)}% conf`,
+      sub:  `Legit:AS${alertData.legit_origin} → Rogue:AS${alertData.seen_origin} · ${(alertData.confidence*100).toFixed(0)}% conf`,
       time: now,
     };
-  }
-
   if (item) {
     activityLog.unshift(item);
     if (activityLog.length > 50) activityLog.pop();
@@ -906,20 +777,13 @@ function addActivity(type, asData, alertData) {
 }
 
 function renderActivity() {
-  const list = document.getElementById('activity-list');
+  const list  = document.getElementById('activity-list');
   const count = document.getElementById('activity-count');
-
   count.textContent = `${activityLog.length} events`;
-
   if (!activityLog.length) {
-    list.innerHTML = `<div class="no-activity">
-      <span class="empty-icon">📡</span>
-      Waiting for BGP updates…<br>
-      <span style="font-size:9px">Events appear as routing changes occur</span>
-    </div>`;
+    list.innerHTML = `<div style="text-align:center;color:var(--text3);padding:30px;font-size:10px;line-height:2.5">📡 Waiting for BGP updates…</div>`;
     return;
   }
-
   list.innerHTML = activityLog.map(item => `
     <div class="activity-item ${item.cls}">
       <span class="act-icon">${item.icon}</span>
@@ -932,29 +796,14 @@ function renderActivity() {
   `).join('');
 }
 
-// ── Stats ─────────────────────────────────────────────────
-function updateStats(s) {
-  const trusted = s.total_asns - s.isolated_asns;
-  document.getElementById('s-asns').textContent     = s.total_asns;
-  document.getElementById('s-isolated').textContent = s.isolated_asns;
-  document.getElementById('s-trusted').textContent  = trusted;
-  document.getElementById('s-prefixes').textContent = s.known_prefixes.toLocaleString();
-  document.getElementById('s-chain').textContent    = s.chain_length.toLocaleString();
-  document.getElementById('s-alerts').textContent   = s.alert_count;
-
-  const cv = document.getElementById('s-chain-valid');
-  cv.textContent = s.chain_valid ? 'VALID' : 'TAMPERED';
-  cv.className   = 'stat-val ' + (s.chain_valid ? 'success' : 'danger');
-}
-
 // ── Trust Table ───────────────────────────────────────────
 function compBar(val, type) {
-  const color = compColor(val, type);
-  const pct   = (val * 100).toFixed(0);
+  const colors = { wb:'#a78bfa', wd:'#4da6ff', wr:'#00e5a0' };
+  const color  = colors[type];
   return `
     <div class="comp-wrap">
       <div class="comp-bar">
-        <div class="comp-fill" style="width:${pct}%;background:${color}"></div>
+        <div class="comp-fill" style="width:${(val*100).toFixed(0)}%;background:${color}"></div>
       </div>
       <span class="comp-val" style="color:${color}">${val.toFixed(2)}</span>
     </div>`;
@@ -963,220 +812,208 @@ function compBar(val, type) {
 function updateTable(data) {
   const tbody = document.getElementById('trust-table');
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">
-      <span class="empty-icon">⏳</span>
-      No AS data yet — waiting for BGP updates
-    </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">Waiting for data…</td></tr>`;
     return;
   }
-
   tbody.innerHTML = data.map(d => {
     const color = scoreColor(d.final, d.is_isolated);
-    const pct   = (d.final * 100).toFixed(1);
     return `
-    <tr class="${d.is_isolated ? 'isolated' : ''}">
-      <td class="asn-cell">AS${d.asn}</td>
-      <td>
-        <div class="score-wrap">
-          <div class="score-bar">
-            <div class="score-fill" style="width:${pct}%;background:${color}"></div>
+      <tr class="${d.is_isolated ? 'isolated' : ''}">
+        <td class="asn-cell">AS${d.asn}</td>
+        <td>
+          <div class="score-wrap">
+            <div class="score-bar">
+              <div class="score-fill" style="width:${(d.final*100).toFixed(1)}%;background:${color}"></div>
+            </div>
+            <span class="score-num" style="color:${color}">${d.final.toFixed(4)}</span>
           </div>
-          <span class="score-num" style="color:${color}">${d.final.toFixed(4)}</span>
-        </div>
-      </td>
-      <td>${compBar(d.wb, 'wb')}</td>
-      <td>${compBar(d.wd, 'wd')}</td>
-      <td>${compBar(d.wr, 'wr')}</td>
-      <td><span class="verdict ${d.verdict}">${d.verdict}</span></td>
-      <td style="color:var(--text2);font-size:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${d.reason}">${d.reason}</td>
-    </tr>`;
+        </td>
+        <td>${compBar(d.wb,'wb')}</td>
+        <td>${compBar(d.wd,'wd')}</td>
+        <td>${compBar(d.wr,'wr')}</td>
+        <td><span class="verdict ${d.verdict}">${d.verdict}</span></td>
+        <td style="color:var(--text2);font-size:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis"
+            title="${d.reason}">${d.reason}</td>
+      </tr>`;
   }).join('');
-}
-
-// ── Network Graph ─────────────────────────────────────────
-function nodeRadius(d) {
-  return 6 + d.final * 18;
-}
-
-function initGraph() {
-  svg = d3.select('#network-svg');
-  g   = svg.append('g');
-
-  svg.call(d3.zoom()
-    .scaleExtent([0.3, 4])
-    .on('zoom', e => g.attr('transform', e.transform))
-  );
-
-  simulation = d3.forceSimulation()
-    .force('link',    d3.forceLink().id(d => d.id).distance(70))
-    .force('charge',  d3.forceManyBody().strength(-180))
-    .force('center',  d3.forceCenter(
-      svg.node().clientWidth / 2,
-      svg.node().clientHeight / 2
-    ))
-    .force('collision', d3.forceCollide().radius(d => nodeRadius(d) + 10));
-}
-
-function updateGraph(data) {
-  if (!svg) initGraph();
-
-  const W = svg.node().clientWidth;
-  const H = svg.node().clientHeight;
-
-  const newNodes = data.map(d => {
-    const ex = nodes.find(n => n.id === d.asn);
-    return {
-      id:       d.asn,
-      final:    d.final,
-      isolated: d.is_isolated,
-      verdict:  d.verdict,
-      wb: d.wb, wd: d.wd, wr: d.wr,
-      x: ex ? ex.x : W/2 + (Math.random()-0.5)*200,
-      y: ex ? ex.y : H/2 + (Math.random()-0.5)*200,
-      vx: ex ? ex.vx : 0,
-      vy: ex ? ex.vy : 0,
-    };
-  });
-
-  // Edges — connect each node to 2-3 neighbours
-  const newLinks = [];
-  for (let i = 0; i < newNodes.length; i++) {
-    const connected = new Set();
-    for (let j = 0; j < newNodes.length; j++) {
-      if (i === j) continue;
-      if (connected.size >= 3) break;
-      if (Math.random() < 0.3) {
-        newLinks.push({ source: newNodes[i].id, target: newNodes[j].id });
-        connected.add(j);
-      }
-    }
-  }
-
-  nodes = newNodes;
-  links = newLinks;
-
-  g.selectAll('.link').remove();
-  linkSel = g.selectAll('.link')
-    .data(links).enter()
-    .append('line')
-    .attr('class', 'link')
-    .attr('stroke', '#1e3a5f')
-    .attr('stroke-width', 0.8)
-    .attr('stroke-opacity', 0.5);
-
-  g.selectAll('.node-group').remove();
-  const nodeGroups = g.selectAll('.node-group')
-    .data(nodes, d => d.id).enter()
-    .append('g')
-    .attr('class', 'node-group')
-    .style('cursor', 'pointer')
-    .call(d3.drag()
-      .on('start', dragStart)
-      .on('drag',  dragging)
-      .on('end',   dragEnd))
-    .on('mouseover', showTooltip)
-    .on('mousemove', moveTooltip)
-    .on('mouseout',  hideTooltip);
-
-  // Glow ring for isolated nodes
-  nodeGroups.filter(d => d.isolated)
-    .append('circle')
-    .attr('r', d => nodeRadius(d) + 4)
-    .attr('fill', 'none')
-    .attr('stroke', '#ff3b3b')
-    .attr('stroke-width', 1)
-    .attr('stroke-opacity', 0.4)
-    .attr('stroke-dasharray', '3,3');
-
-  nodeGroups.append('circle')
-    .attr('r',    d => nodeRadius(d))
-    .attr('fill', d => scoreColor(d.final, d.isolated))
-    .attr('fill-opacity', 0.85)
-    .attr('stroke', d => d.isolated ? '#ff3b3b' : 'rgba(255,255,255,0.1)')
-    .attr('stroke-width', d => d.isolated ? 1.5 : 0.5);
-
-  nodeGroups.append('text')
-    .attr('text-anchor', 'middle')
-    .attr('dy', d => nodeRadius(d) + 11)
-    .attr('fill', '#5c8ab0')
-    .attr('font-size', '9px')
-    .attr('font-family', "'JetBrains Mono', monospace")
-    .attr('pointer-events', 'none')
-    .text(d => `AS${d.id}`);
-
-  nodeSel    = nodeGroups;
-  labelSel   = null;
-
-  simulation.nodes(nodes).on('tick', ticked);
-  simulation.force('link').links(links);
-  simulation.alpha(0.3).restart();
-}
-
-function ticked() {
-  if (linkSel) {
-    linkSel
-      .attr('x1', d => d.source.x)
-      .attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x)
-      .attr('y2', d => d.target.y);
-  }
-  if (nodeSel) {
-    nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
-  }
-}
-
-function dragStart(event, d) {
-  if (!event.active) simulation.alphaTarget(0.3).restart();
-  d.fx = d.x; d.fy = d.y;
-}
-function dragging(event, d) { d.fx = event.x; d.fy = event.y; }
-function dragEnd(event, d) {
-  if (!event.active) simulation.alphaTarget(0);
-  d.fx = null; d.fy = null;
 }
 
 // ── Tooltip ───────────────────────────────────────────────
 const tooltip = document.getElementById('node-tooltip');
 
-function showTooltip(event, d) {
-  const color = scoreColor(d.final, d.isolated);
+function nodeInfo(asn) {
+  return trustMap[asn] || { asn, final:0.5, wb:0.5, wd:0.5, wr:0.5, is_isolated:false, verdict:'UNKNOWN' };
+}
+
+function showTip(event, asn) {
+  const d     = nodeInfo(asn);
+  const color = scoreColor(d.final, d.is_isolated);
   tooltip.style.display = 'block';
   tooltip.innerHTML = `
-    <div class="tooltip-asn" style="color:${color}">AS${d.id}</div>
+    <div class="tooltip-asn" style="color:${color}">AS${asn}</div>
     <div class="tooltip-row">
       <span class="tooltip-label">Trust Score</span>
       <span class="tooltip-value" style="color:${color}">${d.final.toFixed(4)}</span>
     </div>
     <div class="tooltip-row">
-      <span class="tooltip-label">WB (Security)</span>
+      <span class="tooltip-label">WB Security</span>
       <span class="tooltip-value" style="color:#a78bfa">${d.wb.toFixed(3)}</span>
     </div>
     <div class="tooltip-row">
-      <span class="tooltip-label">WD (Direct)</span>
+      <span class="tooltip-label">WD Direct</span>
       <span class="tooltip-value" style="color:#4da6ff">${d.wd.toFixed(3)}</span>
     </div>
     <div class="tooltip-row">
-      <span class="tooltip-label">WR (Peer)</span>
+      <span class="tooltip-label">WR Peer</span>
       <span class="tooltip-value" style="color:#00e5a0">${d.wr.toFixed(3)}</span>
     </div>
-    <div class="tooltip-row" style="margin-top:4px; border-top:1px solid var(--border); padding-top:4px">
+    <div class="tooltip-row" style="margin-top:4px;border-top:1px solid var(--border);padding-top:4px">
       <span class="tooltip-label">Status</span>
-      <span class="tooltip-value" style="color:${d.isolated ? '#ff3b3b' : '#00e5a0'}">${d.verdict}</span>
-    </div>
-  `;
+      <span class="tooltip-value" style="color:${d.is_isolated?'#ff3b3b':'#00e5a0'}">${d.verdict}</span>
+    </div>`;
 }
-
-function moveTooltip(event) {
+function moveTip(event) {
   tooltip.style.left = (event.clientX + 14) + 'px';
   tooltip.style.top  = (event.clientY - 10) + 'px';
 }
-
-function hideTooltip() {
-  tooltip.style.display = 'none';
+function hideTip() { tooltip.style.display = 'none'; }
+// ── Sankey Path Flow ──────────────────────────────────────
+function renderNode(asn, prepend) {
+  const info  = nodeInfo(asn);
+  const color = scoreColor(info.final, info.is_isolated);
+  const bg    = scoreBg(info.final, info.is_isolated);
+  const iso   = info.is_isolated ? 'isolated' : '';
+  const score = info.verdict !== 'UNKNOWN'
+  ? info.final.toFixed(2) : 'new';
+  const prepBadge = prepend > 1
+    ? `<span class="prepend-badge">×${prepend}</span>` : '';
+  return `
+    <div class="sankey-node"
+         onmouseover="showTip(event,${asn})"
+         onmousemove="moveTip(event)"
+         onmouseout="hideTip()">
+      <div class="sankey-box ${iso}"
+           style="color:${color};background:${bg};border-color:${color}40">
+        AS${asn}${prepBadge}
+      </div>
+      <div class="sankey-score" style="color:${color}">T=${score}</div>
+    </div>`;
 }
 
+function renderEdge(count, maxCount) {
+  const thickness = 1 + Math.round((count / maxCount) * 4);
+  const opacity   = 0.3 + (count / maxCount) * 0.5;
+  return `
+    <div class="sankey-edge">
+      <div class="sankey-line"
+           style="height:${thickness}px;background:var(--border);opacity:${opacity}">
+        <span class="sankey-count">${count}×</span>
+        <span class="sankey-arrow" style="color:var(--text3)">▶</span>
+      </div>
+    </div>`;
+}
+
+function updateSankey(pathData) {
+  const container = document.getElementById('sankey-container');
+  const paths     = pathData.recent_paths || [];
+
+  if (!paths.length) {
+    container.innerHTML = `
+      <div class="sankey-empty">
+        📡 Waiting for BGP path data…<br>
+        <span style="font-size:9px">Real AS paths appear here as BGP updates arrive</span>
+      </div>`;
+    return;
+  }
+
+  // Deduplicate paths — count frequency per unique path
+  const pathCounts = {};
+  paths.forEach(p => {
+    const deduped = p.as_path.filter(
+      (a, i) => i === 0 || a !== p.as_path[i-1]
+    );
+    const key = `${p.prefix}|${deduped.join(',')}`;
+    if (!pathCounts[key]) {
+      pathCounts[key] = {
+        prefix:   p.prefix,
+        as_path:  deduped,
+        original: p.as_path,
+        count:    0,
+      };
+    }
+    pathCounts[key].count++;
+  });
+
+  // Group by prefix
+  const byPrefix = {};
+  Object.values(pathCounts).forEach(p => {
+    if (!byPrefix[p.prefix]) byPrefix[p.prefix] = [];
+    byPrefix[p.prefix].push(p);
+  });
+
+  // Sort each group by frequency
+  Object.values(byPrefix).forEach(
+    arr => arr.sort((a, b) => b.count - a.count)
+  );
+
+  const maxCount = Math.max(
+    ...Object.values(pathCounts).map(p => p.count), 1
+  );
+
+  // Only show prefixes with multiple announcements or paths
+  const filteredPrefixes = Object.entries(byPrefix)
+  .filter(([prefix, prefPaths]) => {
+    const total = prefPaths.reduce((s, p) => s + p.count, 0);
+    const isIPv4 = !prefix.includes(':');
+    return isIPv4 || total > 2 || prefPaths.length > 1;
+  })
+  .sort(([, a], [, b]) => {
+    const ta = a.reduce((s, p) => s + p.count, 0);
+    const tb = b.reduce((s, p) => s + p.count, 0);
+    return tb - ta;
+  });
+
+  // Fall back to showing everything if filter is too strict
+  const toShow = filteredPrefixes.length > 0
+    ? filteredPrefixes
+    : Object.entries(byPrefix).slice(0, 8);
+
+  let html = '';
+
+  toShow.forEach(([prefix, prefixPaths]) => {
+    const total = prefixPaths.reduce((s, p) => s + p.count, 0);
+    html += `
+      <div class="path-group">
+        <div class="path-group-header">
+          <span class="path-group-prefix">${prefix}</span>
+          <span class="path-group-count">
+            ${total} announcements
+            · ${prefixPaths.length} unique path${prefixPaths.length > 1 ? 's' : ''}
+          </span>
+        </div>`;
+
+    prefixPaths.slice(0, 5).forEach(p => {
+      const prepCounts = {};
+      p.original.forEach(a => {
+        prepCounts[a] = (prepCounts[a] || 0) + 1;
+      });
+
+      html += `<div class="sankey-row">`;
+      p.as_path.forEach((asn, i) => {
+        html += renderNode(asn, prepCounts[asn]);
+        if (i < p.as_path.length - 1) {
+          html += renderEdge(p.count, maxCount);
+        }
+      });
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+}
 // ── Init ──────────────────────────────────────────────────
-initGraph();
 fetchAll();
 setInterval(fetchAll, 5000);
 </script>
