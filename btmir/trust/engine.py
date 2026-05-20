@@ -36,21 +36,34 @@ def apply_decay(value: float, age_in_epochs: int) -> float:
 
 
 # ── WB: Security Evaluation ────────────────────────────────
-def compute_wb(rpki_valid: bool, path_anomaly_score: float) -> float:
+def compute_WB(rpki_valid: bool,
+               path_anomaly_score: float,
+               is_transit: bool = False) -> float:
     """
     Evaluates the security posture of an AS.
 
-    rpki_valid        : does this AS have a valid ROA for this prefix?
-    path_anomaly_score: 0.0 = clean path, 1.0 = very suspicious path
+    For origin ASes:
+        rpki_valid        : does this AS have a valid ROA?
+        path_anomaly_score: 0.0 = clean path, 1.0 = suspicious
+
+    For transit ASes:
+        RPKI does not apply — they don't originate prefixes.
+        WB is based purely on path anomaly behavior.
 
     Returns WB in range [0.0, 1.0]
     """
+    if is_transit:
+        # Transit AS — RPKI irrelevant
+        # Give neutral base score, penalize only for anomalies
+        anomaly_score = 1.0 - path_anomaly_score
+        wb = 0.50 + (0.45 * anomaly_score)
+        return round(max(0.0, min(1.0, wb)), 4)
+
+    # Origin AS — full RPKI + anomaly evaluation
     rpki_score    = 1.0 if rpki_valid else 0.0
     anomaly_score = 1.0 - path_anomaly_score
-
     wb = (0.6 * rpki_score) + (0.4 * anomaly_score)
-    return round(wb, 4)
-
+    return round(max(0.0, min(1.0, wb)), 4)
 
 # ── WD: Direct Trust ───────────────────────────────────────
 def compute_wd(interaction_history: List[dict]) -> float:
@@ -167,24 +180,22 @@ def check_path_anomaly(as_path: List[int]) -> float:
 
 # ── Composite Trust ────────────────────────────────────────
 def compute_trust(
-    update:           BGPUpdate,
-    rpki_valid:       bool,
+    update:              BGPUpdate,
+    rpki_valid:          bool,
     interaction_history: List[dict],
-    recommendations:  List[dict],
+    recommendations:     List[dict],
+    is_transit:          bool = False,
 ) -> TrustScore:
     """
     The main function of the trust engine.
-    Takes a BGP update and all available evidence,
-    returns a complete TrustScore with a decision.
     """
     # Step 1: check path anomaly
     anomaly_score = check_path_anomaly(update.as_path)
 
-    # Step 2: compute WB
-    wb = compute_wb(rpki_valid, anomaly_score)
+    # Step 2: compute WB — pass is_transit flag
+    wb = compute_WB(rpki_valid, anomaly_score, is_transit)
 
-    # Step 3: security gate — if WB too low, reject immediately
-    # No point computing WD and WR for clearly malicious ASes
+    # Step 3: security gate
     if wb < SECURITY_GATE:
         return TrustScore(
             asn        = update.origin_asn,

@@ -3,7 +3,7 @@
 import pytest
 from btmir.trust.models import BGPUpdate
 from btmir.trust.engine import (
-    compute_wb,
+    compute_WB,
     compute_wd,
     compute_wr,
     compute_trust,
@@ -46,23 +46,23 @@ def test_decay_never_negative():
 # ── WB Tests ───────────────────────────────────────────────
 def test_wb_perfect():
     """RPKI valid + clean path = high WB."""
-    wb = compute_wb(rpki_valid=True, path_anomaly_score=0.0)
+    wb = compute_WB(rpki_valid=True, path_anomaly_score=0.0)
     assert wb == 1.0
 
 def test_wb_no_rpki():
     """No RPKI = lower WB even with clean path."""
-    wb = compute_wb(rpki_valid=False, path_anomaly_score=0.0)
+    wb = compute_WB(rpki_valid=False, path_anomaly_score=0.0)
     assert wb < 1.0
     assert wb > 0.0
 
 def test_wb_high_anomaly():
     """High path anomaly = low WB."""
-    wb = compute_wb(rpki_valid=True, path_anomaly_score=1.0)
-    assert wb < compute_wb(rpki_valid=True, path_anomaly_score=0.0)
+    wb = compute_WB(rpki_valid=True, path_anomaly_score=1.0)
+    assert wb < compute_WB(rpki_valid=True, path_anomaly_score=0.0)
 
 def test_wb_worst_case():
     """No RPKI + maximum anomaly = very low WB."""
-    wb = compute_wb(rpki_valid=False, path_anomaly_score=1.0)
+    wb = compute_WB(rpki_valid=False, path_anomaly_score=1.0)
     assert wb < SECURITY_GATE
 
 

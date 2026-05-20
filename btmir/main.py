@@ -139,6 +139,7 @@ class BTMIR:
         )
 
         # Evaluate all transit ASes in the path
+        # Evaluate all transit ASes in the path
         for hop_asn in set(update.as_path):
             if hop_asn == update.origin_asn:
                 continue
@@ -158,6 +159,7 @@ class BTMIR:
                 rpki_valid          = False,
                 interaction_history = hop_history,
                 recommendations     = hop_recs,
+                is_transit          = True,    # ← key change
             )
             self.store.save_trust(hop_result)
 
