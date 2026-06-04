@@ -233,4 +233,4 @@ def compute_trust(
         final      = final,
         is_isolated = is_isolated,
         reason     = reason,
-    )
+    )

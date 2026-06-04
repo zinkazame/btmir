@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys, json, math, time, sqlite3, logging
+import urllib.request
 
 logging.basicConfig(
     filename='/tmp/btmir-lab/btmir.log',
@@ -15,6 +16,52 @@ ALPHA           = 0.30
 BETA            = 0.40
 GAMMA           = 0.30
 DECAY_RATE      = 0.05
+
+# Windows BTMIR API address (via VMnet8 bridge)
+# Change this to match your Windows VMnet8 static IP
+BTMIR_API = "http://192.168.72.1:8000"
+
+
+def forward_alert(prefix, legit_origin, seen_origin, confidence, attack_type):
+    """Push hijack alert to the Windows dashboard."""
+    try:
+        payload = json.dumps({
+            "prefix":       prefix,
+            "legit_origin": legit_origin,
+            "seen_origin":  seen_origin,
+            "confidence":   confidence,
+            "attack_type":  attack_type,
+        }).encode()
+        req = urllib.request.Request(
+            BTMIR_API + "/lab/alert",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=3)
+        log.info(f"Alert forwarded -> {BTMIR_API}/lab/alert")
+    except Exception as e:
+        log.debug(f"Alert forward failed: {e}")
+
+
+def forward_evaluation(prefix, origin_asn, as_path, peer_asn=0):
+    """Push trust evaluation to the Windows dashboard."""
+    try:
+        payload = json.dumps({
+            "asn":      origin_asn,
+            "prefix":   prefix,
+            "as_path":  as_path,
+            "peer_asn": peer_asn,
+        }).encode()
+        req = urllib.request.Request(
+            BTMIR_API + "/evaluate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=3)
+    except Exception as e:
+        log.debug(f"Eval forward failed: {e}")
 
 
 def init_db():
@@ -158,15 +205,15 @@ def path_anomaly(as_path):
 def check_hijack(prefix, origin_asn):
     origins = get_prefix_origins(prefix)
     if not origins:
-        return False, 0.0
+        return False, 0.0, None
     dominant_asn, dominant_count = origins[0]
     if dominant_asn == origin_asn:
-        return False, 0.0
+        return False, 0.0, None
     total = sum(c for _, c in origins)
     confidence = min(0.95, dominant_count / (total + 1))
     if confidence <= 0.50:
-        return False, 0.0
-    return True, confidence
+        return False, 0.0, None
+    return True, confidence, dominant_asn
 
 
 epoch = 0
@@ -175,11 +222,13 @@ def evaluate(prefix, origin_asn, as_path):
     global epoch
     epoch += 1
 
-    is_hijack, confidence = check_hijack(prefix, origin_asn)
+    is_hijack, confidence, legit_asn = check_hijack(prefix, origin_asn)
     if is_hijack and confidence > 0.70:
         reason = f"HIJACK confidence={confidence:.0%}"
         log.warning(f"BLOCKED {prefix} AS{origin_asn}: {reason}")
         log_decision(prefix, origin_asn, "WITHDRAW", 0.0, reason)
+        # Forward hijack alert to Windows dashboard
+        forward_alert(prefix, legit_asn, origin_asn, confidence, "ORIGIN_CHANGE")
         return False, 0.0, reason
 
     anomaly = path_anomaly(as_path)
@@ -210,6 +259,8 @@ def evaluate(prefix, origin_asn, as_path):
     reason = f"Trusted T={final:.3f}"
     log.info(f"ALLOWED {prefix} AS{origin_asn}: {reason}")
     log_decision(prefix, origin_asn, "ANNOUNCE", final, reason)
+    # Forward all evaluations to Windows dashboard
+    forward_evaluation(prefix, origin_asn, as_path)
     return True, final, reason
 
 
@@ -292,7 +343,7 @@ def parse_update(line):
 
 def main():
     init_db()
-    log.info("BTMIR ExaBGP handler started")
+    log.info(f"BTMIR ExaBGP handler started -> API={BTMIR_API}")
     send('startup')
 
     for line in sys.stdin:

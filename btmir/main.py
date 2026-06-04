@@ -205,7 +205,7 @@ class BTMIR:
                 f"isolated={s['isolated_asns']} "
                 f"prefixes={s['known_prefixes']} "
                 f"updates={c['updates_received']} "
-                f"alerts={len(self.detector.stats())} "
+                f"alerts={self.detector.stats()['alerts_fired']} "
                 f"chain={s['chain_length']} blocks"
             )
 

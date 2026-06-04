@@ -16,8 +16,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from btmir.trust.store  import TrustStore
-from btmir.trust.models import TrustScore
+from btmir.trust.store import TrustStore
+from btmir.trust.models import TrustScore, BGPUpdate
+from btmir.trust.engine import compute_trust
 
 app = FastAPI(
     title       = "BTMIR — BGP Trust API",
@@ -37,6 +38,7 @@ app.add_middleware(
 _store: Optional[TrustStore] = None
 _start_time = time.time()
 _alerts: List[dict] = []   # in-memory alert log
+_eval_epoch = 0  # epoch counter for /evaluate endpoint
 
 
 def init(store: TrustStore):
@@ -70,6 +72,21 @@ class TrustResponse(BaseModel):
     is_isolated: bool
     reason:      str
     verdict:     str   # "TRUSTED" or "ISOLATED"
+
+
+class EvaluateRequest(BaseModel):
+    asn:      int
+    prefix:   str
+    as_path:  List[int]
+    peer_asn: int = 0
+
+
+class LabAlertRequest(BaseModel):
+    prefix:       str
+    legit_origin: int
+    seen_origin:  int
+    confidence:   float
+    attack_type:  str = "ORIGIN_CHANGE"
 
 
 class AlertResponse(BaseModel):
@@ -158,6 +175,77 @@ def get_trust(asn: int):
 def get_isolated():
     """List ASNs of all currently isolated ASes."""
     return get_store().get_isolated()
+
+@app.post("/evaluate", response_model=TrustResponse, tags=["Trust"])
+def evaluate(req: EvaluateRequest):
+    """
+    Submit a BGP update for trust evaluation.
+    Used by ExaBGP handler and lab integration.
+    """
+    global _eval_epoch
+    store = get_store()
+    _eval_epoch += 1
+
+    update = BGPUpdate(
+        timestamp  = time.time(),
+        peer_asn   = req.peer_asn,
+        peer_ip    = "",
+        prefix     = req.prefix,
+        as_path    = req.as_path,
+        origin_asn = req.asn,
+        announced  = True,
+    )
+
+    # Record prefix for hijack history
+    store.record_prefix(update.prefix, update.origin_asn)
+
+    # Pull history and recommendations
+    history = store.get_interactions(req.asn)
+    all_scores = store.get_all_trust()
+    recs = [
+        {"score": s.final, "recommender_trust": s.final}
+        for s in all_scores if s.asn != req.asn
+    ]
+
+    # Compute trust directly
+    result = compute_trust(
+        update              = update,
+        rpki_valid          = False,
+        interaction_history = history,
+        recommendations     = recs,
+    )
+
+    # Save and record interaction
+    store.save_trust(result)
+    store.record_interaction(
+        asn      = req.asn,
+        peer_asn = req.peer_asn,
+        success  = not result.is_isolated,
+        epoch    = _eval_epoch,
+    )
+
+    return _to_response(result)
+
+
+@app.post("/lab/alert", tags=["Lab"])
+def lab_alert(req: LabAlertRequest):
+    """
+    Receive a hijack alert from the Kali VM lab.
+    Pushes it into the dashboard's alert feed.
+    """
+    alert = {
+        "prefix":       req.prefix,
+        "legit_origin": req.legit_origin,
+        "seen_origin":  req.seen_origin,
+        "confidence":   req.confidence,
+        "attack_type":  req.attack_type,
+        "severity":     "CRITICAL" if req.confidence >= 0.85
+                        else "HIGH" if req.confidence >= 0.60
+                        else "MEDIUM",
+        "timestamp":    time.time(),
+    }
+    add_alert(alert)
+    return {"status": "ok", "alert_received": True}
 
 @app.get("/paths", tags=["Graph"])
 def get_paths():
