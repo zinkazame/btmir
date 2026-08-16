@@ -1,6 +1,6 @@
 # BTMIR — Blockchain-Based Trust Model for BGP Security
 
-> Academic Design Project | Divyanshu Mehra | Roll No. 230000173009  
+> Academic Design Project | Divyanshu Mehra   
 > Based on: Yang et al. (2025), CMC Vol. 82(3), pp. 4821–4839
 
 A **real, deployable BGP security system** that evaluates trust for Autonomous Systems using a composite trust model, detects prefix hijacks in real time, and enforces routing decisions via ExaBGP.
